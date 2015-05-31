@@ -16,12 +16,12 @@ var grConfig gorest2.Gorest
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	input := args()
-	config := parseConfig(input[0])
-	if config == nil {
+	grConfig = parseConfig(input[0])
+	if grConfig == nil {
 		return
 	}
-	ds := config["data_source"].(string)
-	dbType := config["db_type"].(string)
+	ds := grConfig["data_source"].(string)
+	dbType := grConfig["db_type"].(string)
 
 	dbo := &gorest2.MySqlDataOperator{
 		Ds:     ds,
