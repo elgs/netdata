@@ -25,7 +25,7 @@ func init() {
 			RedirectUri string `json:"redirectUri"`
 		}
 
-		clientSecret := "46efdbf6b4cb2e8b9ed52d38b5c83f8c4efa055c"
+		clientSecret := grConfig["secret_github"].(string)
 		var accessTokenParams AccessTokenParams
 		accessTokenDecoder := json.NewDecoder(r.Body)
 		err := accessTokenDecoder.Decode(&accessTokenParams)
@@ -109,7 +109,7 @@ func init() {
 			ExpiresIn   int64  `json:"expires_in"`
 		}
 
-		clientSecret := "f35cd9e4c94d2e4e08d777fb822ac1aa"
+		clientSecret := grConfig["secret_facebook"].(string)
 		var accessTokenParams AccessTokenParams
 		accessTokenDecoder := json.NewDecoder(r.Body)
 		err := accessTokenDecoder.Decode(&accessTokenParams)
@@ -197,7 +197,7 @@ func init() {
 			IdToken     string `json:"id_token"`
 		}
 
-		clientSecret := "5POpggPe7bH7oefLmlIUbnzI"
+		clientSecret := grConfig["secret_google"].(string)
 		var accessTokenParams AccessTokenParams
 		accessTokenDecoder := json.NewDecoder(r.Body)
 		err := accessTokenDecoder.Decode(&accessTokenParams)
@@ -294,7 +294,7 @@ func init() {
 			UserId      string `json:"user_id"`
 		}
 
-		clientSecret := "Rs91Xf0Wjav2LsZ7PLuF4phr91kpZlY2"
+		clientSecret := grConfig["secret_live"].(string)
 		var accessTokenParams AccessTokenParams
 		accessTokenDecoder := json.NewDecoder(r.Body)
 		err := accessTokenDecoder.Decode(&accessTokenParams)
