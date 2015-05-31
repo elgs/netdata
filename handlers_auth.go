@@ -2,7 +2,6 @@
 package main
 
 import (
-	"code.google.com/p/go-uuid/uuid"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -10,6 +9,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
+	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -508,16 +508,16 @@ func CreateUser(db *sql.DB, userData map[string]interface{}) error {
 		status = "0"
 	}
 	user := map[string]interface{}{
-		"ID":           uuid.New(),
+		"ID":           uuid.NewV4().String(),
 		"TYPE":         userData["type"],
-		"TOKEN_KEY":    uuid.New(),
+		"TOKEN_KEY":    uuid.NewV4().String(),
 		"STATUS":       status,
 		"USERNAME":     userData["name"],
 		"EMAIL":        userData["email"],
 		"PHONE_NUMBER": phoneNumber,
 		"PICTURE_URL":  picture,
 		"PASSWORD":     password,
-		"TMP_KEY":      uuid.New(),
+		"TMP_KEY":      uuid.NewV4().String(),
 		"LAST_LOGIN":   time.Now(),
 		"CREATOR_ID":   "system",
 		"CREATOR_CODE": "system",

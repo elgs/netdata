@@ -1,12 +1,12 @@
 package main
 
 import (
-	"code.google.com/p/go-uuid/uuid"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
+	"github.com/satori/go.uuid"
 	"strings"
 	"time"
 )
@@ -57,7 +57,7 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		userToken := context["user_token"]
 		v := userToken.(map[string]string)
 		memberData := map[string]interface{}{
-			"ID":           uuid.New(),
+			"ID":           uuid.NewV4().String(),
 			"USER_EMAIL":   member,
 			"PROJECT_ID":   projectId,
 			"PROJECT_NAME": data["NAME"],
