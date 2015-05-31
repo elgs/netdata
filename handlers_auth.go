@@ -148,9 +148,9 @@ func init() {
 			fmt.Println(err)
 		}
 
-		//				for k, v := range m {
-		//					fmt.Println(k, ": ", v)
-		//				}
+		for k, v := range m {
+			fmt.Println(k, ": ", v)
+		}
 
 		tokenMap := map[string]interface{}{
 			"name":  m["name"],
@@ -243,9 +243,9 @@ func init() {
 			fmt.Println(err)
 		}
 
-		//				for k, v := range m {
-		//					fmt.Println(k, ": ", v)
-		//				}
+		for k, v := range m {
+			fmt.Println(k, ": ", v)
+		}
 
 		tokenMap := map[string]interface{}{
 			"name":    m["name"],
@@ -334,9 +334,9 @@ func init() {
 			fmt.Println(err)
 		}
 
-		//				for k, v := range m {
-		//					fmt.Println(k, ": ", v)
-		//				}
+		for k, v := range m {
+			fmt.Println(k, ": ", v)
+		}
 
 		emails := m["emails"].(map[string]interface{})
 		email := emails["account"]
