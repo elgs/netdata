@@ -38,7 +38,7 @@ func init() {
 }
 
 func GetNearestServer(ipStr string) string {
-	fmt.Println("client ip:", ipStr)
+	//	fmt.Println("client ip:", ipStr)
 	if ipStr == "127.0.0.1" || ipStr == "localhost" {
 		return "127.0.0.1:1103"
 	}
@@ -73,13 +73,13 @@ func GetNearestServer(ipStr string) string {
 	if len(serverData) == 1 {
 		server := serverData[0]
 		ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
-		fmt.Println(ret)
+		//		fmt.Println(ret)
 		return ret
 	}
 	for _, server := range serverData {
 		if city == server["REGION"] {
 			ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
-			fmt.Println(ret)
+			//			fmt.Println(ret)
 			return ret
 		}
 	}
@@ -87,6 +87,6 @@ func GetNearestServer(ipStr string) string {
 	r := rand.Intn(len(serverData))
 	server := serverData[r]
 	ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
-	fmt.Println(ret)
+	//	fmt.Println(ret)
 	return ret
 }
