@@ -72,7 +72,7 @@ func GetNearestServer(ipStr string) string {
 	}
 	if len(serverData) == 1 {
 		server := serverData[0]
-		ret = fmt.Sprintf("%s:%d", server["SERVER_NAME"], server["SERVER_IP"])
+		ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_IP"])
 		fmt.Println(ret)
 		return ret
 	}
