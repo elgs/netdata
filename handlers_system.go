@@ -34,11 +34,11 @@ func init() {
 		}
 		serverAddr := GetNearestServer(host)
 		fmt.Fprintf(w, serverAddr)
-		return
 	})
 }
 
 func GetNearestServer(ipStr string) string {
+	fmt.Println("client ip:", ipStr)
 	if ipStr == "127.0.0.1" || ipStr == "localhost" {
 		return "127.0.0.1:1103"
 	}
