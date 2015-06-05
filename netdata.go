@@ -40,9 +40,8 @@ func main() {
 			fmt.Println(err)
 			return nil
 		}
-		query := `SELECT data_store.*, REPLACE(project.ID,'-','') AS DB FROM project
-		INNER JOIN data_store ON project.DATA_STORE_NAME=data_store.DATA_STORE_NAME
-		WHERE project.ID=?`
+		query := `SELECT data_store.*, CONCAT_WS('_','netdata',REPLACE(project.ID,'-','')) AS DB FROM project
+			INNER JOIN data_store ON project.DATA_STORE_NAME=data_store.DATA_STORE_NAME WHERE project.ID=?`
 		data, err := gosqljson.QueryDbToMap(db, "", query, id)
 		if err != nil {
 			fmt.Println(err)
