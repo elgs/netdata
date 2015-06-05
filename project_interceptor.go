@@ -97,7 +97,7 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		return err
 	}
 
-	_, err = gosqljson.ExecDb(projectDb, "CREATE DATABASE IF NOT EXISTS `"+
+	_, err := gosqljson.ExecDb(projectDb, "CREATE DATABASE IF NOT EXISTS `"+
 		"netdata_"+strings.Replace(projectId, "-", "", -1)+
 		"` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci")
 	if err != nil {
