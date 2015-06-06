@@ -106,7 +106,7 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		return err
 	}
 
-	sqlCreateUserTable := `CREATE TABLE ` + dbName + `.user (
+	sqlCreateUserTable := `CREATE TABLE IF NOT EXISTS ` + dbName + `.user (
 		ID char(36) NOT NULL,
 		CODE varchar(100) NOT NULL,
 		  CREATOR_ID char(36) NOT NULL,
