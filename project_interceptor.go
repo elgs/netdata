@@ -97,13 +97,35 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		return err
 	}
 
-	_, err = gosqljson.ExecDb(projectDb, "CREATE DATABASE IF NOT EXISTS `"+
-		"netdata_"+strings.Replace(projectId, "-", "", -1)+
-		"` DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci")
+	dbName := "netdata_" + strings.Replace(projectId, "-", "", -1)
+
+	_, err = gosqljson.ExecDb(projectDb, "CREATE DATABASE IF NOT EXISTS "+dbName+
+		" DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci")
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
+
+	sqlCreateUserTable := `CREATE TABLE ` + dbName + `.user (
+		ID char(36) NOT NULL,
+		CODE varchar(100) NOT NULL,
+		  CREATOR_ID char(36) NOT NULL,
+		  CREATOR_CODE varchar(50) NOT NULL,
+		  CREATE_TIME datetime NOT NULL,
+		  UPDATER_ID char(36) NOT NULL,
+		  UPDATER_CODE varchar(50) NOT NULL,
+		  UPDATE_TIME datetime NOT NULL,
+		  PRIMARY KEY (ID),
+		  UNIQUE KEY CODE (CODE),
+		  KEY CREATOR_ID (CREATOR_ID),
+		  KEY CREATE_TIME (CREATE_TIME)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
+	_, err = gosqljson.ExecDb(projectDb, sqlCreateUserTable)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	return nil
 }
 
