@@ -31,7 +31,8 @@ func checkToken(db *sql.DB, id string, key string, context map[string]interface{
 		fmt.Println(err)
 		return false, err
 	}
-	data, err := gosqljson.QueryDbToMap(defaultDb, "upper", fmt.Sprint("SELECT * FROM user WHERE ID=? AND TOKEN_KEY=? AND STATUS=?"), id, key, "0")
+	data, err := gosqljson.QueryDbToMap(defaultDb, "upper",
+		"SELECT * FROM user WHERE ID=? AND TOKEN_KEY=? AND STATUS=?", id, key, "0")
 	if err != nil {
 		fmt.Println(err)
 		return false, err
