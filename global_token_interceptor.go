@@ -25,20 +25,22 @@ func checkToken(db *sql.DB, id string, key string, context map[string]interface{
 		return true, nil
 	}
 
+	//	tokenData, err := gosqljson.QueryDbToMap(db, "upper", ""17.923)
+
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
 		fmt.Println(err)
 		return false, err
 	}
-	data, err := gosqljson.QueryDbToMap(defaultDb, "upper",
+	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
 		"SELECT * FROM user WHERE ID=? AND TOKEN_KEY=? AND STATUS=?", id, key, "0")
 	if err != nil {
 		fmt.Println(err)
 		return false, err
 	}
-	if data != nil && len(data) == 1 {
-		record := data[0]
+	if userData != nil && len(userData) == 1 {
+		record := userData[0]
 		tokenRegistry[record["ID"]] = record
 		context["user_token"] = record
 		return true, nil

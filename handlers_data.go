@@ -251,12 +251,23 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 			m["headers"] = headers
 			m["sql"] = sql
 		} else {
-			totalRowsMap, err := gosqljson.QueryDbToMap(db, "", `SELECT COUNT(*) AS ROW_COUNT FROM (`+sql+`)a`)
+
+			orderBy := ""
+			if order != "" && dir != "" {
+				orderBy = "ORDER BY " + order + " " + dir
+			}
+
+			headers, dataArray, err := gosqljson.QueryDbToArray(db, "", `SELECT SQL_CALC_FOUND_ROWS * FROM (`+sql+`)a `+orderBy+` LIMIT ?,?`,
+				(pageNumber-1)*pageSize, pageSize)
 			if err != nil {
 				return nil, err
 			}
 
-			totalRows, err := strconv.ParseInt(totalRowsMap[0]["ROW_COUNT"], 10, 0)
+			totalRowsMap, err := gosqljson.QueryDbToMap(db, "", `SELECT FOUND_ROWS()`)
+			if err != nil {
+				return nil, err
+			}
+			totalRows, err := strconv.ParseInt(totalRowsMap[0]["FOUND_ROWS()"], 10, 0)
 			if err != nil {
 				totalRows = 0
 			}
@@ -267,16 +278,6 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 				pageNumber = totalPages
 			}
 
-			orderBy := ""
-			if order != "" && dir != "" {
-				orderBy = "ORDER BY " + order + " " + dir
-			}
-
-			headers, dataArray, err := gosqljson.QueryDbToArray(db, "", `SELECT * FROM (`+sql+`)a `+orderBy+` LIMIT ?,?`,
-				(pageNumber-1)*pageSize, pageSize)
-			if err != nil {
-				return nil, err
-			}
 			m["headers"] = headers
 			m["data_array"] = dataArray
 			m["total_rows"] = totalRows
