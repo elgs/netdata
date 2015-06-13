@@ -75,6 +75,9 @@ type GlobalTokenInterceptor struct {
 }
 
 func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "create"); !ok {
 		return false, err
 	}
@@ -95,18 +98,30 @@ func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, 
 	return ctn, err
 }
 func (this *GlobalTokenInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, id string) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "load"); !ok {
 		return false, err
 	}
 	return checkToken(db, context["api_token_id"].(string), context["api_token_key"].(string), context, resourceId)
 }
 func (this *GlobalTokenInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "update"); !ok {
 		return false, err
 	}
@@ -124,41 +139,68 @@ func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, 
 	return ctn, err
 }
 func (this *GlobalTokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "duplicate"); !ok {
 		return false, err
 	}
 	return checkToken(db, context["api_token_id"].(string), context["api_token_key"].(string), context, resourceId)
 }
 func (this *GlobalTokenInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "delete"); !ok {
 		return false, err
 	}
 	return checkToken(db, context["api_token_id"].(string), context["api_token_key"].(string), context, resourceId)
 }
 func (this *GlobalTokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "list"); !ok {
 		return false, err
 	}
 	return checkToken(db, context["api_token_id"].(string), context["api_token_key"].(string), context, resourceId)
 }
 func (this *GlobalTokenInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data []map[string]string, total int64) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+	if !isDefaultProjectRequest(context) {
+		return true, nil
+	}
 	if ok, err := checkACL(resourceId, "list"); !ok {
 		return false, err
 	}
 	return checkToken(db, context["api_token_id"].(string), context["api_token_key"].(string), context, resourceId)
 }
 func (this *GlobalTokenInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers []string, data [][]string, total int64) error {
+	if !isDefaultProjectRequest(context) {
+		return nil
+	}
 	return nil
 }
