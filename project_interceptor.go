@@ -34,6 +34,7 @@ func (this *ProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, cont
 		return false, err
 	}
 	data["PROJECT_KEY"] = projectKey
+	data["STATUS"] = "0"
 
 	return true, nil
 }
@@ -115,8 +116,11 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 	}
 
 	sqlCreateUserTable := `CREATE TABLE IF NOT EXISTS ` + dbName + `.user (
-		ID char(36) NOT NULL,
-		CODE varchar(100) NOT NULL,
+		  ID char(36) NOT NULL,
+          ND_CODE varchar(100) NOT NULL,
+          ND_EMAIL varchar(100) NOT NULL,
+          ND_PASSWORD varchar(100) NOT NULL,
+          ND_STATUS varchar(50) NOT NULL,
 		  CREATOR_ID char(36) NOT NULL,
 		  CREATOR_CODE varchar(50) NOT NULL,
 		  CREATE_TIME datetime NOT NULL,
@@ -124,7 +128,7 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		  UPDATER_CODE varchar(50) NOT NULL,
 		  UPDATE_TIME datetime NOT NULL,
 		  PRIMARY KEY (ID),
-		  UNIQUE KEY CODE (CODE),
+		  UNIQUE KEY ND_CODE (ND_CODE),
 		  KEY CREATOR_ID (CREATOR_ID),
 		  KEY CREATE_TIME (CREATE_TIME)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
