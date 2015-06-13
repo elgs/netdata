@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
+	"github.com/elgs/gostrgen"
 	"github.com/satori/go.uuid"
 	"strings"
 	"time"
@@ -27,6 +28,13 @@ func (this *ProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, cont
 		return false, err
 	}
 	context["tx"] = tx
+
+	projectKey, err := gostrgen.RandGen(16, gostrgen.LowerDigit, "", "")
+	if err != nil {
+		return false, err
+	}
+	data["PROJECT_KEY"] = projectKey
+
 	return true, nil
 }
 func (this *ProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
@@ -40,6 +48,7 @@ func (this *ProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, cont
 
 func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
 	projectId := data["ID"].(string)
+	projectKey := data["PROJECT_KEY"].(string)
 	// Update members
 	members := strings.Split(data["MEMBERS"].(string), ",")
 	tx := context["tx"].(*sql.Tx)
@@ -77,7 +86,6 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 	}
 
 	// Create database
-
 	query := `SELECT * FROM data_store WHERE DATA_STORE_NAME=?`
 	projectData, err := gosqljson.QueryDbToMap(db, "", query, data["DATA_STORE_NAME"])
 	if err != nil {
@@ -97,7 +105,7 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		return err
 	}
 
-	dbName := "netdata_" + strings.Replace(projectId, "-", "", -1)
+	dbName := "nd_" + projectKey
 
 	_, err = gosqljson.ExecDb(projectDb, "CREATE DATABASE IF NOT EXISTS "+dbName+
 		" DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci")
@@ -121,6 +129,13 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		  KEY CREATE_TIME (CREATE_TIME)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
 	_, err = gosqljson.ExecDb(projectDb, sqlCreateUserTable)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	sqlGrant := fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@`%%` IDENTIFIED BY \"%s\";", dbName, projectKey, projectId)
+	_, err = gosqljson.ExecDb(projectDb, sqlGrant)
 	if err != nil {
 		fmt.Println(err)
 		return err

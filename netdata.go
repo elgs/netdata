@@ -40,7 +40,8 @@ func main() {
 			fmt.Println(err)
 			return nil
 		}
-		query := `SELECT data_store.*, CONCAT_WS('_','netdata',REPLACE(project.ID,'-','')) AS DB FROM project
+		query := `SELECT data_store.*, 
+			CONCAT_WS('_','nd',project.PROJECT_KEY) AS DB,project.ID AS PROJECT_ID,project.PROJECT_KEY FROM project
 			INNER JOIN data_store ON project.DATA_STORE_NAME=data_store.DATA_STORE_NAME WHERE project.ID=?`
 		data, err := gosqljson.QueryDbToMap(db, "", query, id)
 		if err != nil {
@@ -51,7 +52,7 @@ func main() {
 			return nil
 		}
 		dboData := data[0]
-		ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", dboData["USERNAME"], dboData["PASSWORD"],
+		ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", dboData["PROJECT_KEY"], dboData["PROJECT_ID"],
 			dboData["HOST"], dboData["PORT"], dboData["DB"])
 		ret = &gorest2.MySqlDataOperator{
 			Ds:     ds,

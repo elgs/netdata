@@ -25,7 +25,7 @@ func checkToken(db *sql.DB, id string, key string, context map[string]interface{
 		return true, nil
 	}
 
-	//	tokenData, err := gosqljson.QueryDbToMap(db, "upper", ""17.923)
+	//	tokenData, err := gosqljson.QueryDbToMap(db, "upper", "")
 
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
