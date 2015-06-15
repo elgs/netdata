@@ -55,7 +55,7 @@ func init() {
 		sql := r.FormValue("sql")
 		name := r.FormValue("name")
 
-		projectId := r.FormValue("project_id")
+		projectId := r.FormValue("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -83,7 +83,7 @@ func init() {
 
 		m := map[string]interface{}{}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -119,7 +119,7 @@ func init() {
 		dir := r.FormValue("dir")
 		mode := r.FormValue("mode") // header, data
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -155,7 +155,7 @@ func init() {
 		dir := r.FormValue("dir")
 		mode := r.FormValue("mode") // header, data
 		ms := make([]map[string]interface{}, 0, len(sqls))
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}

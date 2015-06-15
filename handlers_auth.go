@@ -72,7 +72,7 @@ func init() {
 			"type":    "github",
 		}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -158,7 +158,7 @@ func init() {
 			"type":  "facebook",
 		}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -254,7 +254,7 @@ func init() {
 			"type":    "google",
 		}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -346,7 +346,7 @@ func init() {
 			"type":  "live",
 		}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -383,7 +383,7 @@ func init() {
 			fmt.Println(err)
 		}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}
@@ -431,7 +431,7 @@ func init() {
 			fmt.Println(err)
 		}
 
-		projectId := r.Header.Get("project_id")
+		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			projectId = "default"
 		}

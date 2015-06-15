@@ -115,28 +115,28 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 		return err
 	}
 
-	sqlCreateUserTable := `CREATE TABLE IF NOT EXISTS ` + dbName + `.user (
-		  ID char(36) NOT NULL,
-          ND_CODE varchar(100) NOT NULL,
-          ND_EMAIL varchar(100) NOT NULL,
-          ND_PASSWORD varchar(100) NOT NULL,
-          ND_STATUS varchar(50) NOT NULL,
-		  CREATOR_ID char(36) NOT NULL,
-		  CREATOR_CODE varchar(50) NOT NULL,
-		  CREATE_TIME datetime NOT NULL,
-		  UPDATER_ID char(36) NOT NULL,
-		  UPDATER_CODE varchar(50) NOT NULL,
-		  UPDATE_TIME datetime NOT NULL,
-		  PRIMARY KEY (ID),
-		  UNIQUE KEY ND_CODE (ND_CODE),
-		  KEY CREATOR_ID (CREATOR_ID),
-		  KEY CREATE_TIME (CREATE_TIME)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
-	_, err = gosqljson.ExecDb(projectDb, sqlCreateUserTable)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
+	//	sqlCreateUserTable := `CREATE TABLE IF NOT EXISTS ` + dbName + `.user (
+	//		  ID char(36) NOT NULL,
+	//          ND_CODE varchar(100) NOT NULL,
+	//          ND_EMAIL varchar(100) NOT NULL,
+	//          ND_PASSWORD varchar(100) NOT NULL,
+	//          ND_STATUS varchar(50) NOT NULL,
+	//		  CREATOR_ID char(36) NOT NULL,
+	//		  CREATOR_CODE varchar(50) NOT NULL,
+	//		  CREATE_TIME datetime NOT NULL,
+	//		  UPDATER_ID char(36) NOT NULL,
+	//		  UPDATER_CODE varchar(50) NOT NULL,
+	//		  UPDATE_TIME datetime NOT NULL,
+	//		  PRIMARY KEY (ID),
+	//		  UNIQUE KEY ND_CODE (ND_CODE),
+	//		  KEY CREATOR_ID (CREATOR_ID),
+	//		  KEY CREATE_TIME (CREATE_TIME)
+	//		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
+	//	_, err = gosqljson.ExecDb(projectDb, sqlCreateUserTable)
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		return err
+	//	}
 
 	sqlGrant := fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@`%%` IDENTIFIED BY \"%s\";", dbName, projectKey, projectId)
 	_, err = gosqljson.ExecDb(projectDb, sqlGrant)
