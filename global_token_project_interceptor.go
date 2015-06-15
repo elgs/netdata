@@ -15,10 +15,6 @@ type GlobalTokenProjectInterceptor struct {
 	Id string
 }
 
-func isDefaultProjectRequest(context map[string]interface{}) bool {
-	return len(context["project_id"].(string)) != 36
-}
-
 func (this *GlobalTokenProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil

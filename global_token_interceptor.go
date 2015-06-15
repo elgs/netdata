@@ -8,12 +8,17 @@ import (
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
 	"io/ioutil"
+	"strings"
 	"time"
 )
 
 func init() {
 	loadACL()
 	gorest2.RegisterGlobalDataInterceptor(&GlobalTokenInterceptor{Id: "GlobalTokenInterceptor"})
+}
+
+func isDefaultProjectRequest(context map[string]interface{}) bool {
+	return len(context["project_id"].(string)) != 36
 }
 
 var acl = make(map[string]map[string]bool)
@@ -24,8 +29,6 @@ func checkToken(db *sql.DB, id string, key string, context map[string]interface{
 		context["user_token"] = tokenRegistry[id]
 		return true, nil
 	}
-
-	//	tokenData, err := gosqljson.QueryDbToMap(db, "upper", "")
 
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
@@ -63,6 +66,7 @@ func loadACL() {
 }
 
 func checkACL(tableId string, op string) (bool, error) {
+	tableId = strings.Replace(tableId, "`", "", -1)
 	if acl[tableId] != nil && !acl[tableId][op] {
 		return false, errors.New("Access denied.")
 	}
