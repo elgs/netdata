@@ -47,7 +47,7 @@ func (this *ProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, cont
 	return true, nil
 }
 
-func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func afterCreateOrUpdateProject(db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
 	projectId := data["ID"].(string)
 	projectKey := data["PROJECT_KEY"].(string)
 	// Update members
@@ -149,11 +149,11 @@ func afterCreateOrUpdate(db *sql.DB, context map[string]interface{}, data map[st
 }
 
 func (this *ProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return afterCreateOrUpdate(db, context, data)
+	return afterCreateOrUpdateProject(db, context, data)
 }
 
 func (this *ProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return afterCreateOrUpdate(db, context, data)
+	return afterCreateOrUpdateProject(db, context, data)
 }
 
 func filterPorjects(context map[string]interface{}, filter *string) (bool, error) {
