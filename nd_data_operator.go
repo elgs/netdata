@@ -2,19 +2,16 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
-	"fmt"
 	"strconv"
-	"database/sql"
 )
 
 type NdDataOperator struct {
 	*gorest2.MySqlDataOperator
-	Ds     string
-	DbType string
-	Db     *sql.DB
-} 
+}
 
 func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]map[string]string, int64, error) {
 	ret := make([]map[string]string, 0)

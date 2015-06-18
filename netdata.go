@@ -24,8 +24,10 @@ func main() {
 	dbType := grConfig["db_type"].(string)
 
 	dbo := &NdDataOperator{
-		Ds:     ds,
-		DbType: dbType,
+		&gorest2.MySqlDataOperator{
+			Ds:     ds,
+			DbType: dbType,
+		},
 	}
 
 	gorest2.DboRegistry["default"] = dbo
@@ -55,8 +57,10 @@ func main() {
 		ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", dboData["PROJECT_KEY"], dboData["PROJECT_ID"],
 			dboData["HOST"], dboData["PORT"], dboData["DB"])
 		ret = &NdDataOperator{
-			Ds:     ds,
-			DbType: "mysql",
+			&gorest2.MySqlDataOperator{
+				Ds:     ds,
+				DbType: dbType,
+			},
 		}
 		gorest2.DboRegistry[id] = ret
 		return ret
