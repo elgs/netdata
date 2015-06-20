@@ -13,6 +13,15 @@ type NdDataOperator struct {
 	*gorest2.MySqlDataOperator
 }
 
+func NewDbo(ds, dbType string) gorest2.DataOperator {
+	return &NdDataOperator{
+		MySqlDataOperator: &gorest2.MySqlDataOperator{
+			Ds:     ds,
+			DbType: dbType,
+		},
+	}
+}
+
 func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]map[string]string, int64, error) {
 	ret := make([]map[string]string, 0)
 	db, err := this.GetConn()
