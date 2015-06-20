@@ -192,3 +192,21 @@ func (this *GlobalTokenProjectInterceptor) AfterListArray(resourceId string, db 
 	}
 	return nil
 }
+func (this *GlobalTokenProjectInterceptor) BeforeQueryMap(resourceId string, db *sql.DB, context map[string]interface{}, start int64, limit int64, includeTotal bool) (bool, error) {
+	return true, nil
+}
+func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]string, total int64) error {
+	return nil
+}
+func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, db *sql.DB, context map[string]interface{}, start int64, limit int64, includeTotal bool) (bool, error) {
+	return true, nil
+}
+func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, db *sql.DB, context map[string]interface{}, headers []string, data [][]string, total int64) error {
+	return nil
+}
+func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, db *sql.DB, context map[string]interface{}) (bool, error) {
+	return true, nil
+}
+func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, db *sql.DB, context map[string]interface{}) error {
+	return nil
+}

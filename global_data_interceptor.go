@@ -15,20 +15,24 @@ type GlobalDataInterceptor struct {
 }
 
 func (this *GlobalDataInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	wsMsgQueue <- data
+	wsMsgQueue <- 0
 	return nil
 }
 
 func (this *GlobalDataInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	wsMsgQueue <- data
+	wsMsgQueue <- 0
 	return nil
 }
 
 func (this *GlobalDataInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
-	wsMsgQueue <- newId
+	wsMsgQueue <- 0
 	return nil
 }
 func (this *GlobalDataInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	wsMsgQueue <- id
+	wsMsgQueue <- 0
+	return nil
+}
+func (this *GlobalDataInterceptor) AfterExec(resourceId string, db *sql.DB, context map[string]interface{}) error {
+	wsMsgQueue <- 0
 	return nil
 }
