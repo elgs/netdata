@@ -11,6 +11,7 @@ import (
 
 type NdDataOperator struct {
 	*gorest2.MySqlDataOperator
+	QueryRegistry map[string]map[string]string
 }
 
 func NewDbo(ds, dbType string) gorest2.DataOperator {
@@ -20,6 +21,32 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 			DbType: dbType,
 		},
 	}
+}
+
+func (this *NdDataOperator) loadQuery(projectId, queryName string) map[string]string {
+	query := this.QueryRegistry[queryName]
+	if query != nil {
+		return query
+	}
+
+	defaultDbo := gorest2.GetDbo("default")
+	defaultDb, err := defaultDbo.GetConn()
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	queryData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
+		"SELECT * FROM query WHERE PROJECT_ID=? AND NAME=?", projectId, queryName)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	if len(queryData) == 0 {
+		return nil
+	}
+
+	this.QueryRegistry[queryName] = queryData[0]
+	return queryData[0]
 }
 
 func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]map[string]string, int64, error) {

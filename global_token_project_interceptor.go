@@ -22,7 +22,7 @@ type GlobalTokenProjectInterceptor struct {
 var projectTokenRegistry = make(map[string]map[string]string)
 
 func checkAccessPermission(targets, tableId, mode, op string) bool {
-	tableMatch, opMatch := false, false
+	tableMatch, opMatch := false, true
 	if targets == "*" {
 		tableMatch = true
 	} else {
@@ -35,8 +35,13 @@ func checkAccessPermission(targets, tableId, mode, op string) bool {
 			}
 		}
 	}
-	if strings.Contains(mode, op) {
-		opMatch = true
+	if !tableMatch {
+		return false
+	}
+	for _, c := range op {
+		if !strings.ContainsRune(mode, c) {
+			return false
+		}
 	}
 	return tableMatch && opMatch
 }
