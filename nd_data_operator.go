@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
-	"strconv"
 )
 
 type NdDataOperator struct {
@@ -21,6 +20,7 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 			Ds:     ds,
 			DbType: dbType,
 		},
+		QueryRegistry: make(map[string]map[string]string),
 	}
 }
 
@@ -48,112 +48,84 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 	return queryData[0], nil
 }
 
-func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]map[string]string, int64, error) {
+func (this *NdDataOperator) QueryMap(tableId string, context map[string]interface{}) ([]map[string]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 
 	ret := make([]map[string]string, 0)
 	db, err := this.GetConn()
 
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		ctn, err := globalDataInterceptor.BeforeQueryMap(tableId, db, context, start, limit, includeTotal)
+		ctn, err := globalDataInterceptor.BeforeQueryMap(tableId, db, context)
 		if !ctn {
-			return ret, -1, err
+			return ret, err
 		}
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
 	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeQueryMap(tableId, db, context, start, limit, includeTotal)
+		ctn, err := dataInterceptor.BeforeQueryMap(tableId, db, context)
 		if !ctn {
-			return ret, -1, err
+			return ret, err
 		}
 	}
 
 	c := context["case"].(string)
-	m, err := gosqljson.QueryDbToMap(db, c, query["SCRIPT"], start, limit)
+	m, err := gosqljson.QueryDbToMap(db, c, query["SCRIPT"])
 	if err != nil {
 		fmt.Println(err)
-		return ret, -1, err
-	}
-	cnt := -1
-	if includeTotal {
-		c, err := gosqljson.QueryDbToMap(db, "upper",
-			fmt.Sprint("SELECT FOUND_ROWS()"))
-		if err != nil {
-			fmt.Println(err)
-			return ret, -1, err
-		}
-		cnt, err = strconv.Atoi(c[0]["FOUND_ROWS()"])
-		if err != nil {
-			fmt.Println(err)
-			return ret, -1, err
-		}
+		return ret, err
 	}
 
 	if dataInterceptor != nil {
-		dataInterceptor.AfterQueryMap(tableId, db, context, m, int64(cnt))
+		dataInterceptor.AfterQueryMap(tableId, db, context, m)
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		globalDataInterceptor.AfterQueryMap(tableId, db, context, m, int64(cnt))
+		globalDataInterceptor.AfterQueryMap(tableId, db, context, m)
 	}
 
-	return m, int64(cnt), err
+	return m, err
 }
-func (this *NdDataOperator) QueryArray(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]string, [][]string, int64, error) {
+func (this *NdDataOperator) QueryArray(tableId string, context map[string]interface{}) ([]string, [][]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
-		return nil, nil, -1, err
+		return nil, nil, err
 	}
 
 	db, err := this.GetConn()
 
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		ctn, err := globalDataInterceptor.BeforeQueryArray(tableId, db, context, start, limit, includeTotal)
+		ctn, err := globalDataInterceptor.BeforeQueryArray(tableId, db, context)
 		if !ctn {
-			return nil, nil, -1, err
+			return nil, nil, err
 		}
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
 	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeQueryArray(tableId, db, context, start, limit, includeTotal)
+		ctn, err := dataInterceptor.BeforeQueryArray(tableId, db, context)
 		if !ctn {
-			return nil, nil, -1, err
+			return nil, nil, err
 		}
 	}
 
 	c := context["case"].(string)
-	h, a, err := gosqljson.QueryDbToArray(db, c, query["SCRIPT"], start, limit)
+	h, a, err := gosqljson.QueryDbToArray(db, c, query["SCRIPT"])
 	if err != nil {
 		fmt.Println(err)
-		return nil, nil, -1, err
-	}
-	cnt := -1
-	if includeTotal {
-		c, err := gosqljson.QueryDbToMap(db, "upper",
-			fmt.Sprint("SELECT FOUND_ROWS()"))
-		if err != nil {
-			fmt.Println(err)
-			return nil, nil, -1, err
-		}
-		cnt, err = strconv.Atoi(c[0]["FOUND_ROWS()"])
-		if err != nil {
-			fmt.Println(err)
-			return nil, nil, -1, err
-		}
+		return nil, nil, err
 	}
 
 	if dataInterceptor != nil {
-		dataInterceptor.AfterQueryArray(tableId, db, context, h, a, int64(cnt))
+		dataInterceptor.AfterQueryArray(tableId, db, context, h, a)
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		globalDataInterceptor.AfterQueryArray(tableId, db, context, h, a, int64(cnt))
+		globalDataInterceptor.AfterQueryArray(tableId, db, context, h, a)
 	}
 
-	return h, a, int64(cnt), err
+	return h, a, err
 }
 func (this *NdDataOperator) Exec(tableId string, context map[string]interface{}) (int64, error) {
 	projectId := context["app_id"].(string)

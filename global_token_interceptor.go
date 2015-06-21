@@ -208,7 +208,7 @@ func (this *GlobalTokenInterceptor) AfterListArray(resourceId string, db *sql.DB
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, db *sql.DB, context map[string]interface{}, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, db *sql.DB, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -217,13 +217,13 @@ func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, db *sql.DB
 	}
 	return checkDefaultToken(db, context["token"].(string), context, resourceId)
 }
-func (this *GlobalTokenInterceptor) AfterQueryMap(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]string, total int64) error {
+func (this *GlobalTokenInterceptor) AfterQueryMap(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]string) error {
 	if !isDefaultProjectRequest(context) {
 		return nil
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, db *sql.DB, context map[string]interface{}, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, db *sql.DB, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -232,7 +232,7 @@ func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, db *sql.
 	}
 	return checkDefaultToken(db, context["token"].(string), context, resourceId)
 }
-func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, db *sql.DB, context map[string]interface{}, headers []string, data [][]string, total int64) error {
+func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, db *sql.DB, context map[string]interface{}, headers []string, data [][]string) error {
 	if !isDefaultProjectRequest(context) {
 		return nil
 	}
