@@ -3,6 +3,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
@@ -23,33 +24,37 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 	}
 }
 
-func (this *NdDataOperator) loadQuery(projectId, queryName string) map[string]string {
+func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]string, error) {
 	query := this.QueryRegistry[queryName]
 	if query != nil {
-		return query
+		return query, nil
 	}
 
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 	queryData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
 		"SELECT * FROM query WHERE PROJECT_ID=? AND NAME=?", projectId, queryName)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 	if len(queryData) == 0 {
-		return nil
+		return nil, errors.New("Query not found.")
 	}
 
 	this.QueryRegistry[queryName] = queryData[0]
-	return queryData[0]
+	return queryData[0], nil
 }
 
 func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]map[string]string, int64, error) {
+	projectId := context["app_id"].(string)
+	query, err := this.loadQuery(projectId, tableId)
+	if err != nil {
+		return nil, -1, err
+	}
+
 	ret := make([]map[string]string, 0)
 	db, err := this.GetConn()
 
@@ -68,8 +73,7 @@ func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, i
 	}
 
 	c := context["case"].(string)
-	m, err := gosqljson.QueryDbToMap(db, c,
-		fmt.Sprint("SELECT SQL_CALC_FOUND_ROWS LIMIT ?,?"), start, limit)
+	m, err := gosqljson.QueryDbToMap(db, c, query["SCRIPT"], start, limit)
 	if err != nil {
 		fmt.Println(err)
 		return ret, -1, err
@@ -99,6 +103,12 @@ func (this *NdDataOperator) QueryMap(tableId string, start int64, limit int64, i
 	return m, int64(cnt), err
 }
 func (this *NdDataOperator) QueryArray(tableId string, start int64, limit int64, includeTotal bool, context map[string]interface{}) ([]string, [][]string, int64, error) {
+	projectId := context["app_id"].(string)
+	query, err := this.loadQuery(projectId, tableId)
+	if err != nil {
+		return nil, nil, -1, err
+	}
+
 	db, err := this.GetConn()
 
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
@@ -116,8 +126,7 @@ func (this *NdDataOperator) QueryArray(tableId string, start int64, limit int64,
 	}
 
 	c := context["case"].(string)
-	h, a, err := gosqljson.QueryDbToArray(db, c,
-		fmt.Sprint("SELECT SQL_CALC_FOUND_ROWS  LIMIT ?,?"), start, limit)
+	h, a, err := gosqljson.QueryDbToArray(db, c, query["SCRIPT"], start, limit)
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil, -1, err
@@ -147,6 +156,11 @@ func (this *NdDataOperator) QueryArray(tableId string, start int64, limit int64,
 	return h, a, int64(cnt), err
 }
 func (this *NdDataOperator) Exec(tableId string, context map[string]interface{}) (int64, error) {
+	projectId := context["app_id"].(string)
+	query, err := this.loadQuery(projectId, tableId)
+	if err != nil {
+		return -1, err
+	}
 	db, err := this.GetConn()
 
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
@@ -170,14 +184,14 @@ func (this *NdDataOperator) Exec(tableId string, context map[string]interface{})
 	}
 	var rowsAffected int64
 	if tx, ok := context["tx"].(*sql.Tx); ok {
-		rowsAffected, err = gosqljson.ExecTx(tx, fmt.Sprint("UPDATE WHERE ID=?"))
+		rowsAffected, err = gosqljson.ExecTx(tx, query["SCRIPT"])
 		if err != nil {
 			fmt.Println(err)
 			tx.Rollback()
 			return -1, err
 		}
 	} else {
-		rowsAffected, err = gosqljson.ExecDb(db, fmt.Sprint("UPDATE WHERE ID=?"))
+		rowsAffected, err = gosqljson.ExecDb(db, query["SCRIPT"])
 		if err != nil {
 			fmt.Println(err)
 			return -1, err
