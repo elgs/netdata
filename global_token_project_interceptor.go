@@ -86,7 +86,7 @@ func checkProjectToken(projectId string, key string, tableId string, op string) 
 			return false, err
 		}
 		if userData != nil && len(userData) > 0 {
-			userData[0]["MODE"] = "rw"
+			userData[0]["MODE"] = "rwx"
 			userData[0]["TARGETS"] = "*"
 			record := userData[0]
 			projectTokenRegistry[key] = record
