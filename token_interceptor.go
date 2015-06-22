@@ -15,7 +15,7 @@ type TokenInterceptor struct {
 	Id string
 }
 
-func commonAfterCreateOrUpdate(token string) {
+func (this *TokenInterceptor) commonAfterCreateOrUpdateToken(token string) {
 	delete(projectTokenRegistry, token)
 }
 
@@ -25,7 +25,7 @@ func (this *TokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, contex
 }
 
 func (this *TokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	commonAfterCreateOrUpdate(context["old_data"].(map[string]string)["TOKEN"])
+	this.commonAfterCreateOrUpdateToken(context["old_data"].(map[string]string)["TOKEN"])
 	return nil
 }
 
@@ -35,6 +35,6 @@ func (this *TokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, contex
 }
 
 func (this *TokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	commonAfterCreateOrUpdate(context["old_data"].(map[string]string)["TOKEN"])
+	this.commonAfterCreateOrUpdateToken(context["old_data"].(map[string]string)["TOKEN"])
 	return nil
 }
