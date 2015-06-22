@@ -19,7 +19,6 @@ type QueryInterceptor struct {
 func (this *QueryInterceptor) commonAfterCreateOrUpdateQuery(context map[string]interface{}) {
 	queryName := context["old_data"].(map[string]string)["NAME"]
 	appId := context["old_data"].(map[string]string)["PROJECT_ID"]
-	fmt.Println(appId)
 	dbo := gorest2.GetDbo(appId).(*NdDataOperator)
 	delete(dbo.QueryRegistry, queryName)
 }
