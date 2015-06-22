@@ -62,6 +62,48 @@ func init() {
 			}
 		},
 	})
+
+	gorest2.RegisterJob("invalidate_query", &gorest2.Job{
+		Cron: fmt.Sprint(rand.Intn(60), " * * * * *"),
+		MakeAction: func(dbo gorest2.DataOperator) func() {
+			lastUpdateSince := ""
+			return func() {
+				db, err := dbo.GetConn()
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				if lastUpdateSince == "" {
+					// minus the interval of this job (1 min) to eliminate the queries changed before this job first run.
+					changedQueries, err := gosqljson.QueryDbToMap(db, "upper",
+						"SELECT UPDATE_TIME - INTERVAL 1 MINUTE AS UPDATE_TIME FROM query ORDER BY UPDATE_TIME DESC LIMIT 1")
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					lastChangedQuery := changedQueries[0]
+					lastUpdateSince = lastChangedQuery["UPDATE_TIME"]
+				} else {
+					changedQueries, err := gosqljson.QueryDbToMap(db, "upper",
+						"SELECT PROJECT_ID,NAME,UPDATE_TIME FROM query WHERE UPDATE_TIME>? ORDER BY UPDATE_TIME DESC", lastUpdateSince)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					for i, changedQuery := range changedQueries {
+						queryName := changedQuery["NAME"]
+						appId := changedQuery["PROJECT_ID"]
+						dbo := gorest2.GetDbo(appId).(*NdDataOperator)
+						delete(dbo.QueryRegistry, queryName)
+						if i == 0 {
+							lastUpdateSince = changedQuery["UPDATE_TIME"]
+						}
+					}
+				}
+			}
+		},
+	})
 }
 
 func httpRequest(url string, method string, data string, apiTokenId string, apiTokenKey string) ([]byte, error) {
