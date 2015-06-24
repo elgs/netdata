@@ -171,6 +171,8 @@ func init() {
 					m["err"] = err.Error()
 					m["sql"] = sql
 					fmt.Println(err)
+					ms = append(ms, m)
+					break
 				}
 				ms = append(ms, m)
 			} else {
@@ -180,6 +182,8 @@ func init() {
 					m["err"] = err.Error()
 					m["sql"] = sql
 					fmt.Println(err)
+					ms = append(ms, m)
+					break
 				}
 				m["rowsAffected"] = rowsAffected
 				ms = append(ms, m)
