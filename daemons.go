@@ -43,6 +43,9 @@ func init() {
 						fmt.Println(err)
 						return
 					}
+					if len(changedTokens) == 0 {
+						return
+					}
 					lastChangedToken := changedTokens[0]
 					lastUpdateSince = lastChangedToken["UPDATE_TIME"]
 				} else {
@@ -80,6 +83,9 @@ func init() {
 						"SELECT UPDATE_TIME - INTERVAL 1 MINUTE AS UPDATE_TIME FROM query ORDER BY UPDATE_TIME DESC LIMIT 1")
 					if err != nil {
 						fmt.Println(err)
+						return
+					}
+					if len(changedQueries) == 0 {
 						return
 					}
 					lastChangedQuery := changedQueries[0]
