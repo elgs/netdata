@@ -85,7 +85,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -171,7 +173,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -267,7 +271,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -359,7 +365,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -479,7 +487,6 @@ func FindOrCreateUser(db *sql.DB, userData map[string]interface{}) error {
 			) AS roles ON user.EMAIL=roles.USER_EMAIL WHERE user.EMAIL=? AND user.TYPE=?`
 	data, err := gosqljson.QueryDbToMap(db, "", query,
 		userData["email"], userData["type"])
-	fmt.Println("1:", data)
 	if err != nil || data == nil || len(data) == 0 {
 		return CreateUser(db, userData)
 	} else {
