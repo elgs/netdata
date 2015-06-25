@@ -479,10 +479,10 @@ func FindOrCreateUser(db *sql.DB, userData map[string]interface{}) error {
 			) AS roles ON user.EMAIL=roles.USER_EMAIL WHERE user.EMAIL=? AND user.TYPE=?`
 	data, err := gosqljson.QueryDbToMap(db, "", query,
 		userData["email"], userData["type"])
+	fmt.Println("1:", data)
 	if err != nil || data == nil || len(data) == 0 {
 		return CreateUser(db, userData)
 	} else {
-
 		userData["id"] = data[0]["ID"]
 		userData["tokenKey"] = data[0]["TOKEN_KEY"]
 		userData["roles"] = data[0]["ROLES"]
