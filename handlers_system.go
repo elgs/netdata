@@ -16,6 +16,10 @@ import (
 
 func init() {
 
+	gorest2.RegisterHandler("/ping", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "pong")
+	})
+
 	gorest2.RegisterHandler("/shutdown", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.RemoteAddr, "127.0.0.1:") {
 			defer func() {
