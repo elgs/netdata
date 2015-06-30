@@ -344,8 +344,14 @@ func init() {
 			fmt.Println(k, ": ", v)
 		}
 
-		emails := m["emails"].(map[string]interface{})
-		email := emails["account"]
+		var email interface{}
+		if emails, ok := m["emails"].(map[string]interface{}); ok {
+			email = emails["account"]
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email not found."))
+			return
+		}
 		tokenMap := map[string]interface{}{
 			"name":  m["name"],
 			"email": email,
