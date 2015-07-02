@@ -11,22 +11,8 @@ import (
 	"runtime"
 )
 
-var grConfig gorest2.Gorest
-
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	input := args()
-	grConfig = parseConfig(input[0])
-	if grConfig == nil {
-		return
-	}
-	ds := grConfig["data_source"].(string)
-	dbType := grConfig["db_type"].(string)
-
-	dbo := NewDbo(ds, dbType)
-
-	gorest2.DboRegistry["default"] = dbo
-	gorest2.GetDbo = func(id string) gorest2.DataOperator {
+var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
+	return func(id string) gorest2.DataOperator {
 		ret := gorest2.DboRegistry[id]
 		if ret != nil {
 			return ret
@@ -54,6 +40,28 @@ func main() {
 		ret = NewDbo(ds, dbType)
 		gorest2.DboRegistry[id] = ret
 		return ret
+	}
+}
+
+var grConfig gorest2.Gorest
+
+func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	input := args()
+	grConfig = parseConfig(input[0])
+	if grConfig == nil {
+		return
+	}
+	ds := grConfig["data_source"].(string)
+	dbType := grConfig["db_type"].(string)
+	jobNode := grConfig["job_node"].(bool)
+
+	dbo := NewDbo(ds, dbType)
+
+	gorest2.DboRegistry["default"] = dbo
+	gorest2.GetDbo = makeGetDbo(dbType)
+
+	if jobNode {
 	}
 
 	gorest2.RegisterHandler("/api", gorest2.RestFunc)
