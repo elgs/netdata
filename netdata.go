@@ -43,7 +43,9 @@ var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
 	}
 }
 
-var startJobs = func() {}
+var startJobs = func() {
+
+}
 
 var grConfig gorest2.Gorest
 
@@ -56,15 +58,16 @@ func main() {
 	}
 	ds := grConfig["data_source"].(string)
 	dbType := grConfig["db_type"].(string)
-	if jobNode, ok := grConfig["job_node"].(bool); ok && jobNode {
-		fmt.Println(jobNode)
-		startJobs()
-	}
 
 	dbo := NewDbo(ds, dbType)
 
 	gorest2.DboRegistry["default"] = dbo
 	gorest2.GetDbo = makeGetDbo(dbType)
+
+	if jobNode, ok := grConfig["job_node"].(bool); ok && jobNode {
+		fmt.Println(jobNode)
+		startJobs()
+	}
 
 	gorest2.RegisterHandler("/api", gorest2.RestFunc)
 	gorest2.StartDaemons(dbo)
