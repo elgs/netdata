@@ -35,6 +35,7 @@ func init() {
 
 var jobsCron = cron.New()
 var jobModes = make(map[string]func(map[string]string) func())
+var jobStatus = make(map[string]int)
 
 var startJobs = func() {
 	defaultDbo := gorest2.DboRegistry["default"]
@@ -53,13 +54,15 @@ var startJobs = func() {
 		return
 	}
 	for _, job := range data {
+		jobId := job["ID"]
 		mode := job["MODE"]
 		cron := job["CRON"]
-		_, err := jobsCron.AddFunc(cron, jobModes[mode](job))
+		jobRuntimeId, err := jobsCron.AddFunc(cron, jobModes[mode](job))
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
+		jobStatus[jobId] = jobRuntimeId
 	}
 	jobsCron.Start()
 }
