@@ -43,10 +43,6 @@ var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
 	}
 }
 
-var startJobs = func() {
-
-}
-
 var grConfig gorest2.Gorest
 
 func main() {
@@ -65,7 +61,6 @@ func main() {
 	gorest2.GetDbo = makeGetDbo(dbType)
 
 	if jobNode, ok := grConfig["job_node"].(bool); ok && jobNode {
-		fmt.Println(jobNode)
 		startJobs()
 	}
 
