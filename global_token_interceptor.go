@@ -178,7 +178,7 @@ func (this *GlobalTokenInterceptor) AfterDelete(resourceId string, db *sql.DB, c
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -193,7 +193,7 @@ func (this *GlobalTokenInterceptor) AfterListMap(resourceId string, db *sql.DB, 
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}

@@ -27,13 +27,13 @@ func (this *JobInterceptor) BeforeDelete(resourceId string, db *sql.DB, context 
 func (this *JobInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
 	return nil
 }
-func (this *JobInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *JobInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	return true, nil
 }
 func (this *JobInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data []map[string]string, total int64) error {
 	return nil
 }
-func (this *JobInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *JobInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	return true, nil
 }
 func (this *JobInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers []string, data [][]string, total int64) error {
