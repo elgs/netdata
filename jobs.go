@@ -209,8 +209,7 @@ var startJobs = func() {
 	for _, job := range data {
 		jobId := job["ID"]
 		mode := job["MODE"]
-		cronSec := job["CRON_SEC"]
-		cron := fmt.Sprint(cronSec, " ", job["CRON"])
+		cron := job["CRON"]
 		jobRuntimeId, err := jobsCron.AddFunc(cron, jobModes[mode](job))
 		if err != nil {
 			fmt.Println(err)
