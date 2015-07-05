@@ -7,7 +7,6 @@ import (
 	"github.com/elgs/cron"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
-	"math/rand"
 	"net/http"
 )
 
@@ -210,7 +209,8 @@ var startJobs = func() {
 	for _, job := range data {
 		jobId := job["ID"]
 		mode := job["MODE"]
-		cron := fmt.Sprint(rand.Intn(60), " ", job["CRON"])
+		cronSec := job["CRON_SEC"]
+		cron := fmt.Sprint(cronSec, " ", job["CRON"])
 		jobRuntimeId, err := jobsCron.AddFunc(cron, jobModes[mode](job))
 		if err != nil {
 			fmt.Println(err)
