@@ -57,16 +57,21 @@ func init() {
 
 		projectId := r.FormValue("app_id")
 		if projectId == "" {
-			projectId = "default"
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, `{"err":"Invalid app."}`)
+			return
 		}
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprint(w, err.Error())
+			return
 		}
 		headers, data, err := gosqljson.QueryDbToArray(db, "", sql)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprint(w, err.Error())
+			fmt.Fprint(w, `{"err":"Invalid project."}`)
+			return
 		}
 
 		w.Header().Set("Content-Disposition", "attachment; filename="+name+".csv")
@@ -85,7 +90,9 @@ func init() {
 
 		projectId := r.Header.Get("app_id")
 		if projectId == "" {
-			projectId = "default"
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, `{"err":"Invalid app."}`)
+			return
 		}
 		dbo := gorest2.GetDbo(projectId)
 		rowsAffected, err := exec(dbo, sql)
@@ -121,7 +128,9 @@ func init() {
 
 		projectId := r.Header.Get("app_id")
 		if projectId == "" {
-			projectId = "default"
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, `{"err":"Invalid app."}`)
+			return
 		}
 		dbo := gorest2.GetDbo(projectId)
 		m, err := query(dbo, sql, pageNumber, pageSize, order, dir, mode)
@@ -157,7 +166,9 @@ func init() {
 		ms := make([]map[string]interface{}, 0, len(sqls))
 		projectId := r.Header.Get("app_id")
 		if projectId == "" {
-			projectId = "default"
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, `{"err":"Invalid app."}`)
+			return
 		}
 		dbo := gorest2.GetDbo(projectId)
 		for _, sql := range sqls {
