@@ -70,7 +70,6 @@ func init() {
 		headers, data, err := gosqljson.QueryDbToArray(db, "", sql)
 		if err != nil {
 			fmt.Fprint(w, err.Error())
-			fmt.Fprint(w, `{"err":"Invalid project."}`)
 			return
 		}
 
