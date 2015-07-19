@@ -21,6 +21,19 @@ func (this *JobInterceptor) BeforeCreate(resourceId string, db *sql.DB, context 
 	return true, nil
 }
 func (this *JobInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+	job := make(map[string]string)
+	for k, v := range data {
+		job[k] = fmt.Sprint(v)
+	}
+	jobId := job["ID"]
+
+	mode := job["MODE"]
+	cron := job["CRON"]
+	jobRuntimeId, err := jobsCron.AddFunc(cron, jobModes[mode](job))
+	if err != nil {
+		return err
+	}
+	jobStatus[jobId] = jobRuntimeId
 	return nil
 }
 func (this *JobInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
