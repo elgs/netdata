@@ -49,7 +49,6 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 }
 
 func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, context map[string]interface{}) ([]map[string]string, error) {
-	fmt.Println(len(params))
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
