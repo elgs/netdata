@@ -197,6 +197,28 @@ var startJobs = func() {
 		fmt.Println(err)
 		return
 	}
+
+	query := `SELECT job.* FROM job WHERE job.STATUS='0' AND job.PROJECT_ID='default'`
+	data, err := gosqljson.QueryDbToMap(db, "", query)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if data == nil || len(data) == 0 {
+		return
+	}
+	for _, job := range data {
+		jobId := job["ID"]
+		mode := job["MODE"]
+		cron := job["CRON"]
+		jobRuntimeId, err := jobsCron.AddFunc(cron, jobModes[mode](job))
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		jobStatus[jobId] = jobRuntimeId
+	}
+
 	query := `SELECT job.*,project.ID AS PROJECT_ID FROM job INNER JOIN project ON project.ID=job.PROJECT_ID WHERE job.STATUS='0'`
 	data, err := gosqljson.QueryDbToMap(db, "", query)
 	if err != nil {
