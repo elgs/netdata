@@ -219,8 +219,8 @@ var startJobs = func() {
 		jobStatus[jobId] = jobRuntimeId
 	}
 
-	query := `SELECT job.*,project.ID AS PROJECT_ID FROM job INNER JOIN project ON project.ID=job.PROJECT_ID WHERE job.STATUS='0'`
-	data, err := gosqljson.QueryDbToMap(db, "", query)
+	query = `SELECT job.*,project.ID AS PROJECT_ID FROM job INNER JOIN project ON project.ID=job.PROJECT_ID WHERE job.STATUS='0'`
+	data, err = gosqljson.QueryDbToMap(db, "", query)
 	if err != nil {
 		fmt.Println(err)
 		return
