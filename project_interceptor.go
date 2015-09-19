@@ -115,29 +115,6 @@ func afterCreateOrUpdateProject(db *sql.DB, context map[string]interface{}, data
 		return err
 	}
 
-	//	sqlCreateUserTable := `CREATE TABLE IF NOT EXISTS ` + dbName + `.user (
-	//		  ID char(36) NOT NULL,
-	//          ND_CODE varchar(100) NOT NULL,
-	//          ND_EMAIL varchar(100) NOT NULL,
-	//          ND_PASSWORD varchar(100) NOT NULL,
-	//          ND_STATUS varchar(50) NOT NULL,
-	//		  CREATOR_ID char(36) NOT NULL,
-	//		  CREATOR_CODE varchar(50) NOT NULL,
-	//		  CREATE_TIME datetime NOT NULL,
-	//		  UPDATER_ID char(36) NOT NULL,
-	//		  UPDATER_CODE varchar(50) NOT NULL,
-	//		  UPDATE_TIME datetime NOT NULL,
-	//		  PRIMARY KEY (ID),
-	//		  UNIQUE KEY ND_CODE (ND_CODE),
-	//		  KEY CREATOR_ID (CREATOR_ID),
-	//		  KEY CREATE_TIME (CREATE_TIME)
-	//		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
-	//	_, err = gosqljson.ExecDb(projectDb, sqlCreateUserTable)
-	//	if err != nil {
-	//		fmt.Println(err)
-	//		return err
-	//	}
-
 	sqlGrant := fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@`%%` IDENTIFIED BY \"%s\";", dbName, projectKey, projectId)
 	_, err = gosqljson.ExecDb(projectDb, sqlGrant)
 	if err != nil {
@@ -168,6 +145,15 @@ func filterPorjects(context map[string]interface{}, filter *string) (bool, error
 	} else {
 		return false, errors.New("Invalid user token.")
 	}
+}
+
+func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+	// check ownership
+	return true, nil
+}
+func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+	// cleanup, user_project, table, db_user
+	return nil
 }
 
 func (this *ProjectInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
