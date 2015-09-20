@@ -149,16 +149,74 @@ func filterPorjects(context map[string]interface{}, filter *string) (bool, error
 
 func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
 	// check ownership
+	userToken := context["user_token"]
+	if v, ok := userToken.(map[string]string); ok {
+		userId := v["ID"]
+		gorest2.MysqlSafe(&userId)
+		data, err := gosqljson.QueryDbToMap(db, "", `SELECT * FROM project WHERE ID=? AND CREATOR_ID=?`, id, userId)
+		if err != nil || len(data) != 1 {
+			return false, err
+		}
+		projectKey := data[0]["PROJECT_KEY"]
+		dataStoreName := data[0]["DATA_STORE_NAME"]
+		context["project_key"] = projectKey
+		context["data_store_name"] = dataStoreName
+		return true, nil
+	} else {
+		return false, errors.New("Invalid user token.")
+	}
 	return true, nil
 }
 func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	// cleanup, user_project, table, db_user
+	// cleanup, user_project, db, db_user
+	_, err := gosqljson.ExecDb(db, `DELETE FROM user_project WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		return err
+	}
+	projectKey := context["project_key"]
+	dataStoreName := context["data_store_name"]
+	fmt.Println(projectKey, dataStoreName)
+
+	// Drop database
+	query := `SELECT * FROM data_store WHERE DATA_STORE_NAME=?`
+	projectData, err := gosqljson.QueryDbToMap(db, "", query, dataStoreName)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	if projectData == nil || len(projectData) == 0 {
+		return errors.New("Failed to delete project.")
+	}
+	dboData := projectData[0]
+	ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/", dboData["USERNAME"], dboData["PASSWORD"],
+		dboData["HOST"], dboData["PORT"])
+	projectDb, err := sql.Open("mysql", ds)
+	defer projectDb.Close()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	dbName := "nd_" + projectKey.(string)
+
+	_, err = gosqljson.ExecDb(projectDb, "DROP DATABASE IF EXISTS "+dbName)
+	if err != nil {
+		return err
+	}
+
+	sqlDropUser := fmt.Sprintf("DROP USER `%s`", projectKey)
+	_, err = gosqljson.ExecDb(projectDb, sqlDropUser)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	return nil
 }
 
-func (this *ProjectInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *ProjectInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	return filterPorjects(context, filter)
 }
-func (this *ProjectInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64, includeTotal bool) (bool, error) {
+func (this *ProjectInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	return filterPorjects(context, filter)
 }

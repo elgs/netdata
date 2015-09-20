@@ -85,7 +85,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -171,7 +173,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -267,7 +271,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -338,8 +344,14 @@ func init() {
 			fmt.Println(k, ": ", v)
 		}
 
-		emails := m["emails"].(map[string]interface{})
-		email := emails["account"]
+		var email interface{}
+		if emails, ok := m["emails"].(map[string]interface{}); ok {
+			email = emails["account"]
+		} else {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email not found."))
+			return
+		}
 		tokenMap := map[string]interface{}{
 			"name":  m["name"],
 			"email": email,
@@ -359,7 +371,9 @@ func init() {
 		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
-			fmt.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Email already used."))
+			return
 		}
 
 		token, err := CreateJwtToken(tokenMap)
@@ -482,7 +496,6 @@ func FindOrCreateUser(db *sql.DB, userData map[string]interface{}) error {
 	if err != nil || data == nil || len(data) == 0 {
 		return CreateUser(db, userData)
 	} else {
-
 		userData["id"] = data[0]["ID"]
 		userData["tokenKey"] = data[0]["TOKEN_KEY"]
 		userData["roles"] = data[0]["ROLES"]

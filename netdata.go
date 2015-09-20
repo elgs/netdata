@@ -11,27 +11,8 @@ import (
 	"runtime"
 )
 
-var grConfig gorest2.Gorest
-
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	input := args()
-	grConfig = parseConfig(input[0])
-	if grConfig == nil {
-		return
-	}
-	ds := grConfig["data_source"].(string)
-	dbType := grConfig["db_type"].(string)
-
-	dbo := &NdDataOperator{
-		&gorest2.MySqlDataOperator{
-			Ds:     ds,
-			DbType: dbType,
-		},
-	}
-
-	gorest2.DboRegistry["default"] = dbo
-	gorest2.GetDbo = func(id string) gorest2.DataOperator {
+var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
+	return func(id string) gorest2.DataOperator {
 		ret := gorest2.DboRegistry[id]
 		if ret != nil {
 			return ret
@@ -56,14 +37,31 @@ func main() {
 		dboData := data[0]
 		ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v", dboData["PROJECT_KEY"], dboData["PROJECT_ID"],
 			dboData["HOST"], dboData["PORT"], dboData["DB"])
-		ret = &NdDataOperator{
-			&gorest2.MySqlDataOperator{
-				Ds:     ds,
-				DbType: dbType,
-			},
-		}
+		ret = NewDbo(ds, dbType)
 		gorest2.DboRegistry[id] = ret
 		return ret
+	}
+}
+
+var grConfig gorest2.Gorest
+
+func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	input := args()
+	grConfig = parseConfig(input[0])
+	if grConfig == nil {
+		return
+	}
+	ds := grConfig["data_source"].(string)
+	dbType := grConfig["db_type"].(string)
+
+	dbo := NewDbo(ds, dbType)
+
+	gorest2.DboRegistry["default"] = dbo
+	gorest2.GetDbo = makeGetDbo(dbType)
+
+	if jobNode, ok := grConfig["job_node"].(bool); ok && jobNode {
+		startJobs()
 	}
 
 	gorest2.RegisterHandler("/api", gorest2.RestFunc)
