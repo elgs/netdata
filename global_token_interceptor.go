@@ -24,32 +24,30 @@ func isDefaultProjectRequest(context map[string]interface{}) bool {
 var acl = make(map[string]map[string]bool)
 var defaultTokenRegistry = make(map[string]map[string]string)
 
-func checkDefaultToken(key string, context map[string]interface{}, tableId string) (bool, error) {
+func checkDefaultToken(key string) (bool, map[string]string, error) {
 	if key != "" && len(defaultTokenRegistry[key]) > 0 && defaultTokenRegistry[key]["TOKEN_KEY"] == key {
-		context["user_token"] = defaultTokenRegistry[key]
-		return true, nil
+		return true, defaultTokenRegistry[key], nil
 	}
 
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
 		fmt.Println(err)
-		return false, err
+		return false, nil, err
 	}
 	userQuery := `SELECT user.* FROM user INNER JOIN user_role ON user.EMAIL=user_role.USER_EMAIL 
 		WHERE user.TOKEN_KEY=? AND user.STATUS=? AND user_role.ROLE_NAME=?`
 	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper", userQuery, key, "0", "dev")
 	if err != nil {
 		fmt.Println(err)
-		return false, err
+		return false, nil, err
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
 		defaultTokenRegistry[key] = record
-		context["user_token"] = record
-		return true, nil
+		return true, record, nil
 	}
-	return false, errors.New("Authentication failed.")
+	return false, nil, errors.New("Authentication failed.")
 }
 
 func loadACL() {
@@ -86,18 +84,15 @@ func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, 
 	if ok, err := checkACL(resourceId, "create"); !ok {
 		return false, err
 	}
-	ctn, err := checkDefaultToken(context["token"].(string), context, resourceId)
+	ctn, userToken, err := checkDefaultToken(context["token"].(string))
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
-			userToken := context["user_token"]
-			if v, ok := userToken.(map[string]string); ok {
-				data["CREATOR_ID"] = v["ID"]
-				data["CREATOR_CODE"] = v["EMAIL"]
-				data["CREATE_TIME"] = time.Now()
-				data["UPDATER_ID"] = v["ID"]
-				data["UPDATER_CODE"] = v["EMAIL"]
-				data["UPDATE_TIME"] = time.Now()
-			}
+			data["CREATOR_ID"] = userToken["ID"]
+			data["CREATOR_CODE"] = userToken["EMAIL"]
+			data["CREATE_TIME"] = time.Now()
+			data["UPDATER_ID"] = userToken["ID"]
+			data["UPDATER_CODE"] = userToken["EMAIL"]
+			data["UPDATE_TIME"] = time.Now()
 		}
 	}
 	return ctn, err
@@ -115,7 +110,9 @@ func (this *GlobalTokenInterceptor) BeforeLoad(resourceId string, db *sql.DB, fi
 	if ok, err := checkACL(resourceId, "load"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
 	if !isDefaultProjectRequest(context) {
@@ -130,15 +127,12 @@ func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, 
 	if ok, err := checkACL(resourceId, "update"); !ok {
 		return false, err
 	}
-	ctn, err := checkDefaultToken(context["token"].(string), context, resourceId)
+	ctn, userToken, err := checkDefaultToken(context["token"].(string))
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
-			userToken := context["user_token"]
-			if v, ok := userToken.(map[string]string); ok {
-				data["UPDATER_ID"] = v["ID"]
-				data["UPDATER_CODE"] = v["EMAIL"]
-				data["UPDATE_TIME"] = time.Now()
-			}
+			data["UPDATER_ID"] = userToken["ID"]
+			data["UPDATER_CODE"] = userToken["EMAIL"]
+			data["UPDATE_TIME"] = time.Now()
 		}
 	}
 	return ctn, err
@@ -156,7 +150,9 @@ func (this *GlobalTokenInterceptor) BeforeDuplicate(resourceId string, db *sql.D
 	if ok, err := checkACL(resourceId, "duplicate"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
 	if !isDefaultProjectRequest(context) {
@@ -171,7 +167,9 @@ func (this *GlobalTokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, 
 	if ok, err := checkACL(resourceId, "delete"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
 	if !isDefaultProjectRequest(context) {
@@ -186,7 +184,9 @@ func (this *GlobalTokenInterceptor) BeforeListMap(resourceId string, db *sql.DB,
 	if ok, err := checkACL(resourceId, "list"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data []map[string]string, total int64) error {
 	if !isDefaultProjectRequest(context) {
@@ -201,7 +201,9 @@ func (this *GlobalTokenInterceptor) BeforeListArray(resourceId string, db *sql.D
 	if ok, err := checkACL(resourceId, "list"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers []string, data [][]string, total int64) error {
 	if !isDefaultProjectRequest(context) {
@@ -216,7 +218,9 @@ func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, params []i
 	if ok, err := checkACL(resourceId, "query"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterQueryMap(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}, data []map[string]string) error {
 	if !isDefaultProjectRequest(context) {
@@ -231,7 +235,9 @@ func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, params [
 	if ok, err := checkACL(resourceId, "query"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}, headers []string, data [][]string) error {
 	if !isDefaultProjectRequest(context) {
@@ -246,7 +252,9 @@ func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, params []inter
 	if ok, err := checkACL(resourceId, "exec"); !ok {
 		return false, err
 	}
-	return checkDefaultToken(context["token"].(string), context, resourceId)
+	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	context["user_token"] = userToken
+	return allow, err
 }
 func (this *GlobalTokenInterceptor) AfterExec(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}) error {
 	if !isDefaultProjectRequest(context) {

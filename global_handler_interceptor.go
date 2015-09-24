@@ -25,7 +25,8 @@ func (this *GlobalHandlerInterceptor) BeforeHandle(w http.ResponseWriter, r *htt
 		token := r.Header.Get("token")
 		if projectId == "default" {
 			// for admin, check role
-
+			allow, _, err := checkDefaultToken(token)
+			return allow, err
 		} else {
 			// for apps, check user token
 			return checkProjectToken(projectId, token, "*", "rwx")
