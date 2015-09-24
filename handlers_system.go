@@ -16,11 +16,11 @@ import (
 
 func init() {
 
-	gorest2.RegisterHandler("/ping", func(w http.ResponseWriter, r *http.Request) {
+	gorest2.RegisterHandler("/sys/ping", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "pong")
 	})
 
-	gorest2.RegisterHandler("/shutdown", func(w http.ResponseWriter, r *http.Request) {
+	gorest2.RegisterHandler("/sys/shutdown", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.RemoteAddr, "127.0.0.1:") {
 			defer func() {
 				os.Exit(0)
@@ -30,7 +30,7 @@ func init() {
 		}
 	})
 
-	gorest2.RegisterHandler("/get_server", func(w http.ResponseWriter, r *http.Request) {
+	gorest2.RegisterHandler("/sys/get_server", func(w http.ResponseWriter, r *http.Request) {
 		host, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			fmt.Fprintf(w, "netdata.io:2015")

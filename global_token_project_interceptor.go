@@ -21,6 +21,7 @@ type GlobalTokenProjectInterceptor struct {
 
 var projectTokenRegistry = make(map[string]map[string]string)
 
+// server, client, server, client
 func checkAccessPermission(targets, tableId, mode, op string) bool {
 	tableMatch, opMatch := false, true
 	if targets == "*" {
