@@ -17,19 +17,30 @@ type GlobalHandlerInterceptor struct {
 }
 
 func (this *GlobalHandlerInterceptor) BeforeHandle(w http.ResponseWriter, r *http.Request) (bool, error) {
-	fmt.Println("Before handling: ", r.URL.Path)
+	//	fmt.Println("Before handling: ", r.URL.Path)
 	if strings.HasPrefix(r.URL.Path, "/sys/") || strings.HasPrefix(r.URL.Path, "/auth/") {
 		return true, nil
 	} else {
 		projectId := r.Header.Get("app_id")
 		token := r.Header.Get("token")
+		if projectId == "" {
+			projectId = r.FormValue("app_id")
+			token = r.FormValue("token")
+		}
 		if projectId == "default" {
 			// for admin, check role
 			allow, _, err := checkDefaultToken(token)
+			if !allow {
+				fmt.Println("auth failed:", r.URL.Path)
+			}
 			return allow, err
 		} else {
 			// for apps, check user token
-			return checkProjectToken(projectId, token, "*", "rwx")
+			allow, err := checkProjectToken(projectId, token, "*", "rwx")
+			if !allow {
+				fmt.Println("auth failed:", r.URL.Path)
+			}
+			return allow, err
 		}
 	}
 	return true, nil

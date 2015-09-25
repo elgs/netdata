@@ -28,7 +28,7 @@ func init() {
 			}
 		}
 	}
-	gorest2.RegisterHandler("/ws", func(w http.ResponseWriter, r *http.Request) {
+	gorest2.RegisterHandler("/sys/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 		if err != nil {
 			fmt.Println(err)
