@@ -271,6 +271,7 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 				orderBy = "ORDER BY " + order + " " + dir
 			}
 
+			tx, err := db.Begin()
 			headers, dataArray, err := gosqljson.QueryDbToArray(db, "", `SELECT SQL_CALC_FOUND_ROWS * FROM (`+sql+`)a `+orderBy+` LIMIT ?,?`,
 				(pageNumber-1)*pageSize, pageSize)
 			if err != nil {
@@ -285,6 +286,7 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 			if err != nil {
 				totalRows = 0
 			}
+			tx.Commit()
 
 			totalPages := int64(math.Ceil(float64(totalRows) / float64(pageSize)))
 
