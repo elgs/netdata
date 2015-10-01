@@ -272,13 +272,13 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 			}
 
 			tx, err := db.Begin()
-			headers, dataArray, err := gosqljson.QueryDbToArray(db, "", `SELECT SQL_CALC_FOUND_ROWS * FROM (`+sql+`)a `+orderBy+` LIMIT ?,?`,
+			headers, dataArray, err := gosqljson.QueryTxToArray(tx, "", `SELECT SQL_CALC_FOUND_ROWS * FROM (`+sql+`)a `+orderBy+` LIMIT ?,?`,
 				(pageNumber-1)*pageSize, pageSize)
 			if err != nil {
 				return nil, err
 			}
 
-			totalRowsMap, err := gosqljson.QueryDbToMap(db, "", `SELECT FOUND_ROWS()`)
+			totalRowsMap, err := gosqljson.QueryTxToMap(tx, "", `SELECT FOUND_ROWS()`)
 			if err != nil {
 				return nil, err
 			}

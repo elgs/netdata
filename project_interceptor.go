@@ -47,7 +47,7 @@ func (this *ProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, cont
 	return true, nil
 }
 
-func afterCreateOrUpdateProject(db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]interface{}) error {
 	projectId := data["ID"].(string)
 	projectKey := data["PROJECT_KEY"].(string)
 	// Update members
@@ -88,7 +88,7 @@ func afterCreateOrUpdateProject(db *sql.DB, context map[string]interface{}, data
 
 	// Create database
 	query := `SELECT * FROM data_store WHERE DATA_STORE_NAME=?`
-	projectData, err := gosqljson.QueryDbToMap(db, "", query, data["DATA_STORE_NAME"])
+	projectData, err := gosqljson.QueryTxToMap(tx, "", query, data["DATA_STORE_NAME"])
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -126,11 +126,11 @@ func afterCreateOrUpdateProject(db *sql.DB, context map[string]interface{}, data
 }
 
 func (this *ProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return afterCreateOrUpdateProject(db, context, data)
+	return afterCreateOrUpdateProject(context, data)
 }
 
 func (this *ProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return afterCreateOrUpdateProject(db, context, data)
+	return afterCreateOrUpdateProject(context, data)
 }
 
 func filterPorjects(context map[string]interface{}, filter *string) (bool, error) {

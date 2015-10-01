@@ -95,6 +95,7 @@ func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, 
 			data["UPDATE_TIME"] = time.Now()
 		}
 	}
+	context["user_token"] = userToken
 	return ctn, err
 }
 func (this *GlobalTokenInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
@@ -135,6 +136,7 @@ func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, 
 			data["UPDATE_TIME"] = time.Now()
 		}
 	}
+	context["user_token"] = userToken
 	return ctn, err
 }
 func (this *GlobalTokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
