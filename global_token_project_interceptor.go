@@ -223,13 +223,13 @@ func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, pa
 	}
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, params []interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "wx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}) error {
+func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, params []interface{}, tx *sql.Tx, context map[string]interface{}) error {
 	if isDefaultProjectRequest(context) {
 		return nil
 	}

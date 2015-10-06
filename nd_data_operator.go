@@ -2,7 +2,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
@@ -134,64 +133,52 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, context m
 		return -1, err
 	}
 	db, err := this.GetConn()
-
+	if err != nil {
+		return -1, err
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return -1, err
+	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		ctn, err := globalDataInterceptor.BeforeExec(tableId, params, db, context)
+		ctn, err := globalDataInterceptor.BeforeExec(tableId, params, tx, context)
 		if !ctn {
-			if tx, ok := context["tx"].(*sql.Tx); ok {
-				tx.Rollback()
-			}
+			tx.Rollback()
 			return 0, err
 		}
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
 	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeExec(tableId, params, db, context)
+		ctn, err := dataInterceptor.BeforeExec(tableId, params, tx, context)
 		if !ctn {
-			if tx, ok := context["tx"].(*sql.Tx); ok {
-				tx.Rollback()
-			}
+			tx.Rollback()
 			return 0, err
 		}
 	}
 	var rowsAffected int64
-	if tx, ok := context["tx"].(*sql.Tx); ok {
-		rowsAffected, err = gosqljson.ExecTx(tx, query["SCRIPT"], params...)
-		if err != nil {
-			fmt.Println(err)
-			tx.Rollback()
-			return -1, err
-		}
-	} else {
-		rowsAffected, err = gosqljson.ExecDb(db, query["SCRIPT"], params...)
-		if err != nil {
-			fmt.Println(err)
-			return -1, err
-		}
+	rowsAffected, err = gosqljson.ExecTx(tx, query["SCRIPT"], params...)
+	if err != nil {
+		fmt.Println(err)
+		tx.Rollback()
+		return -1, err
 	}
 
 	if dataInterceptor != nil {
-		err := dataInterceptor.AfterExec(tableId, params, db, context)
+		err := dataInterceptor.AfterExec(tableId, params, tx, context)
 		if err != nil {
-			if tx, ok := context["tx"].(*sql.Tx); ok {
-				tx.Rollback()
-			}
+			tx.Rollback()
 			return -1, err
 		}
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		err := globalDataInterceptor.AfterExec(tableId, params, db, context)
+		err := globalDataInterceptor.AfterExec(tableId, params, tx, context)
 		if err != nil {
-			if tx, ok := context["tx"].(*sql.Tx); ok {
-				tx.Rollback()
-			}
+			tx.Rollback()
 			return -1, err
 		}
 	}
 
-	if tx, ok := context["tx"].(*sql.Tx); ok {
-		tx.Commit()
-	}
+	tx.Commit()
 
 	return rowsAffected, err
 }

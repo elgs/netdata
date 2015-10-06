@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/elgs/gorest2"
+	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
 	"github.com/gorilla/websocket"
 	"math"
@@ -83,9 +84,6 @@ func init() {
 	})
 
 	gorest2.RegisterHandler("/exec", func(w http.ResponseWriter, r *http.Request) {
-		sql := r.FormValue("sql")
-
-		m := map[string]interface{}{}
 
 		projectId := r.Header.Get("app_id")
 		if projectId == "" {
@@ -94,6 +92,16 @@ func init() {
 			return
 		}
 		dbo := gorest2.GetDbo(projectId)
+
+		sql := r.FormValue("sql")
+
+		if projectId == "" {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, `{"err":"Invalid sql."}`)
+			return
+		}
+		m := map[string]interface{}{}
+
 		rowsAffected, err := exec(dbo, sql)
 		if err != nil {
 			m["err"] = err.Error()
@@ -354,17 +362,29 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 	return m, nil
 }
 
-func exec(dbo gorest2.DataOperator, sql string) (int64, error) {
-	sqlCheck(&sql)
-
+func exec(dbo gorest2.DataOperator, sql string) ([]int64, error) {
 	db, err := dbo.GetConn()
 	if err != nil {
-		return 0, err
+		return []int64{}, err
 	}
-
-	rowsAffected, err := gosqljson.ExecDb(db, sql)
+	tx, err := db.Begin()
 	if err != nil {
-		return 0, err
+		return []int64{}, err
 	}
-	return rowsAffected, nil
+	rowsAffectedArray := make([]int64, 0)
+	sqls, err := gosplitargs.SplitArgs(sql, ";", true)
+	for _, s := range sqls {
+		sqlCheck(&s)
+		if len(s) == 0 {
+			continue
+		}
+		rowsAffected, err := gosqljson.ExecTx(tx, s)
+		if err != nil {
+			tx.Rollback()
+			return rowsAffectedArray, err
+		}
+		rowsAffectedArray = append(rowsAffectedArray, rowsAffected)
+	}
+	tx.Commit()
+	return rowsAffectedArray, nil
 }
