@@ -213,7 +213,7 @@ func (this *GlobalTokenInterceptor) AfterListArray(resourceId string, db *sql.DB
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -224,13 +224,13 @@ func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, params []i
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterQueryMap(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}, data []map[string]string) error {
+func (this *GlobalTokenInterceptor) AfterQueryMap(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}, data []map[string]string) error {
 	if !isDefaultProjectRequest(context) {
 		return nil
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -241,13 +241,13 @@ func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, params [
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, params []interface{}, db *sql.DB, context map[string]interface{}, headers []string, data [][]string) error {
+func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}, headers []string, data [][]string) error {
 	if !isDefaultProjectRequest(context) {
 		return nil
 	}
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, params []interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string, params []interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -258,7 +258,7 @@ func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, params []inter
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterExec(resourceId string, params []interface{}, tx *sql.Tx, context map[string]interface{}) error {
+func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params []interface{}, tx *sql.Tx, context map[string]interface{}) error {
 	if !isDefaultProjectRequest(context) {
 		return nil
 	}
