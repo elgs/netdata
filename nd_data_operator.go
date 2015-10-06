@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
+	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
 )
 
@@ -135,26 +136,33 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 
 	return h, a, err
 }
-func (this *NdDataOperator) Exec(tableId string, params []interface{}, context map[string]interface{}) (int64, error) {
+func (this *NdDataOperator) Exec(tableId string, params []interface{}, context map[string]interface{}) ([]int64, error) {
+	rowsAffectedArray := make([]int64, 0)
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
-		return -1, err
+		return rowsAffectedArray, err
 	}
 	scripts := query["SCRIPT"]
+
+	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
+	if err != nil {
+		return rowsAffectedArray, err
+	}
+
 	db, err := this.GetConn()
 	if err != nil {
-		return -1, err
+		return rowsAffectedArray, err
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		return -1, err
+		return rowsAffectedArray, err
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
 		ctn, err := globalDataInterceptor.BeforeExec(tableId, scripts, params, tx, context)
 		if !ctn {
 			tx.Rollback()
-			return 0, err
+			return rowsAffectedArray, err
 		}
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
@@ -162,33 +170,46 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, context m
 		ctn, err := dataInterceptor.BeforeExec(tableId, scripts, params, tx, context)
 		if !ctn {
 			tx.Rollback()
-			return 0, err
+			return rowsAffectedArray, err
 		}
 	}
-	var rowsAffected int64
-	rowsAffected, err = gosqljson.ExecTx(tx, scripts, params...)
-	if err != nil {
-		fmt.Println(err)
-		tx.Rollback()
-		return -1, err
+
+	totalCount := 0
+	for _, s := range scriptsArray {
+		sqlCheck(&s)
+		if len(s) == 0 {
+			continue
+		}
+		count, err := gosplitargs.CountSeparators(s, "\\?")
+		if err != nil {
+			tx.Rollback()
+			return rowsAffectedArray, err
+		}
+		rowsAffected, err := gosqljson.ExecTx(tx, s, params[totalCount:totalCount+count]...)
+		if err != nil {
+			tx.Rollback()
+			return rowsAffectedArray, err
+		}
+		rowsAffectedArray = append(rowsAffectedArray, rowsAffected)
+		totalCount += count
 	}
 
 	if dataInterceptor != nil {
 		err := dataInterceptor.AfterExec(tableId, scripts, params, tx, context)
 		if err != nil {
 			tx.Rollback()
-			return -1, err
+			return rowsAffectedArray, err
 		}
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
 		err := globalDataInterceptor.AfterExec(tableId, scripts, params, tx, context)
 		if err != nil {
 			tx.Rollback()
-			return -1, err
+			return rowsAffectedArray, err
 		}
 	}
 
 	tx.Commit()
 
-	return rowsAffected, err
+	return rowsAffectedArray, err
 }
