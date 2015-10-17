@@ -35,9 +35,8 @@ func checkDefaultToken(key string) (bool, map[string]string, error) {
 		fmt.Println(err)
 		return false, nil, err
 	}
-	userQuery := `SELECT user.* FROM user INNER JOIN user_role ON user.EMAIL=user_role.USER_EMAIL 
-		WHERE user.TOKEN_KEY=? AND user.STATUS=? AND user_role.ROLE_NAME=?`
-	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper", userQuery, key, "0", "dev")
+	userQuery := `SELECT user.* FROM user WHERE user.TOKEN_KEY=? AND user.STATUS=?`
+	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper", userQuery, key, "0")
 	if err != nil {
 		fmt.Println(err)
 		return false, nil, err
