@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"github.com/elgs/gorest2"
 )
 
@@ -40,6 +42,13 @@ func (this *QueryInterceptor) BeforeDelete(resourceId string, db *sql.DB, contex
 func (this *QueryInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
 	this.commonAfterCreateOrUpdateQuery(context)
 	return nil
+}
+
+func (this *QueryInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
+	return filterQueries(context, filter)
+}
+func (this *QueryInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
+	return filterQueries(context, filter)
 }
 
 func filterQueries(context map[string]interface{}, filter *string) (bool, error) {
