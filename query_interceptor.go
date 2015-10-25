@@ -41,3 +41,17 @@ func (this *QueryInterceptor) AfterDelete(resourceId string, db *sql.DB, context
 	this.commonAfterCreateOrUpdateQuery(context)
 	return nil
 }
+
+func filterQueries(context map[string]interface{}, filter *string) (bool, error) {
+	userToken := context["user_token"]
+	if v, ok := userToken.(map[string]string); ok {
+		userId := v["ID"]
+		userEmail := v["EMAIL"]
+		gorest2.MysqlSafe(&userId)
+		*filter += fmt.Sprint(` AND (CREATOR_ID='`, userId, `' 
+			OR EXISTS (SELECT 1 FROM user_project WHERE query.PROJECT_ID=user_project.PROJECT_ID AND user_project.USER_EMAIL='`+userEmail+`'))`)
+		return true, nil
+	} else {
+		return false, errors.New("Invalid user token.")
+	}
+}
