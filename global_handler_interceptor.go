@@ -18,7 +18,7 @@ type GlobalHandlerInterceptor struct {
 
 func (this *GlobalHandlerInterceptor) BeforeHandle(w http.ResponseWriter, r *http.Request) (bool, error) {
 	//	fmt.Println("Before handling: ", r.URL.Path)
-	if strings.HasPrefix(r.URL.Path, "/sys/") || strings.HasPrefix(r.URL.Path, "/auth/") {
+	if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/sys/") || strings.HasPrefix(r.URL.Path, "/auth/") {
 		return true, nil
 	} else {
 		projectId := r.Header.Get("app_id")
