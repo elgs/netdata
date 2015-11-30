@@ -185,6 +185,9 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, context m
 			tx.Rollback()
 			return rowsAffectedArray, err
 		}
+		if len(params) < totalCount+count {
+			return nil, errors.New("Incorrect param count.")
+		}
 		rowsAffected, err := gosqljson.ExecTx(tx, s, params[totalCount:totalCount+count]...)
 		if err != nil {
 			tx.Rollback()
