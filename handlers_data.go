@@ -205,7 +205,7 @@ func init() {
 			lines := strings.Split(sql, "\n")
 			for _, line := range lines {
 				line = strings.TrimSpace(line)
-				if strings.TrimSpace(sql) != "" && !strings.HasPrefix("-- ") {
+				if line != "" && !strings.HasPrefix(line, "-- ") {
 					emptySql = false
 					break
 				}
@@ -391,6 +391,9 @@ func query(tx *sql.Tx, sql string, pageNumber int64, pageSize int64, order strin
 func exec(tx *sql.Tx, sql string) ([]int64, error) {
 	rowsAffectedArray := make([]int64, 0)
 	sqls, err := gosplitargs.SplitArgs(sql, ";", true)
+	if err != nil {
+		return nil, err
+	}
 	for _, s := range sqls {
 		sqlCheck(&s)
 		if len(s) == 0 {
