@@ -2,6 +2,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -92,6 +93,11 @@ func init() {
 			return
 		}
 		dbo := gorest2.GetDbo(projectId)
+		db, err := dbo.GetConn()
+		if err != nil {
+			return
+		}
+		tx, err := db.Begin()
 
 		sql := r.FormValue("sql")
 
@@ -102,11 +108,13 @@ func init() {
 		}
 		m := map[string]interface{}{}
 
-		rowsAffected, err := exec(dbo, sql)
+		rowsAffected, err := exec(tx, sql)
 		if err != nil {
+			tx.Rollback()
 			m["err"] = err.Error()
 			fmt.Println(err)
 		}
+		tx.Commit()
 		m["rowsAffected"] = rowsAffected
 		jsonData, err := json.Marshal(m)
 		if err != nil {
@@ -140,10 +148,19 @@ func init() {
 			return
 		}
 		dbo := gorest2.GetDbo(projectId)
-		m, err := query(dbo, sql, pageNumber, pageSize, order, dir, mode)
+		db, err := dbo.GetConn()
 		if err != nil {
+			return
+		}
+		tx, err := db.Begin()
+
+		m, err := query(tx, sql, pageNumber, pageSize, order, dir, mode)
+		if err != nil {
+			tx.Rollback()
 			m["err"] = err.Error()
 			fmt.Println(err)
+		} else {
+			tx.Commit()
 		}
 
 		jsonData, err := json.Marshal(m)
@@ -178,13 +195,28 @@ func init() {
 			return
 		}
 		dbo := gorest2.GetDbo(projectId)
+		db, err := dbo.GetConn()
+		if err != nil {
+			return
+		}
+		tx, err := db.Begin()
 		for _, sql := range sqls {
-			if strings.TrimSpace(sql) == "" {
+			emptySql := true
+			lines := strings.Split(sql, "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if strings.TrimSpace(sql) != "" && !strings.HasPrefix("-- ") {
+					emptySql = false
+					break
+				}
+			}
+			if emptySql {
 				continue
 			}
 			if isQuery(sql) {
-				m, err := query(dbo, sql, pageNumber, pageSize, order, dir, mode)
+				m, err := query(tx, sql, pageNumber, pageSize, order, dir, mode)
 				if err != nil {
+					tx.Rollback()
 					m = map[string]interface{}{}
 					m["err"] = err.Error()
 					m["sql"] = sql
@@ -195,8 +227,9 @@ func init() {
 				ms = append(ms, m)
 			} else {
 				m := map[string]interface{}{}
-				rowsAffected, err := exec(dbo, sql)
+				rowsAffected, err := exec(tx, sql)
 				if err != nil {
+					tx.Rollback()
 					m["err"] = err.Error()
 					m["sql"] = sql
 					fmt.Println(err)
@@ -207,7 +240,7 @@ func init() {
 				ms = append(ms, m)
 			}
 		}
-
+		tx.Commit()
 		jsonData, err := json.Marshal(ms)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -246,19 +279,14 @@ func (this ByName) Swap(i, j int) {
 	this[i], this[j] = this[j], this[i]
 }
 
-func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int64, order string, dir string, mode string) (map[string]interface{}, error) {
+func query(tx *sql.Tx, sql string, pageNumber int64, pageSize int64, order string, dir string, mode string) (map[string]interface{}, error) {
 	sqlCheck(&sql)
-
-	db, err := dbo.GetConn()
-	if err != nil {
-		return nil, err
-	}
 
 	m := make(map[string]interface{})
 
 	if strings.HasPrefix(strings.ToUpper(sql), "SELECT") {
 		if mode == "header" {
-			expMap, err := gosqljson.QueryDbToMap(db, "", `EXPLAIN `+sql)
+			expMap, err := gosqljson.QueryTxToMap(tx, "", `EXPLAIN `+sql)
 			if err != nil {
 				return nil, err
 			}
@@ -266,7 +294,7 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 				m["table"] = expMap[0]["table"]
 			}
 
-			headers, _, err := gosqljson.QueryDbToArray(db, "", `SELECT * FROM (`+sql+`)a LIMIT 0`)
+			headers, _, err := gosqljson.QueryTxToArray(tx, "", `SELECT * FROM (`+sql+`)a LIMIT 0`)
 			if err != nil {
 				return nil, err
 			}
@@ -279,7 +307,6 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 				orderBy = "ORDER BY " + order + " " + dir
 			}
 
-			tx, err := db.Begin()
 			headers, dataArray, err := gosqljson.QueryTxToArray(tx, "", `SELECT SQL_CALC_FOUND_ROWS * FROM (`+sql+`)a `+orderBy+` LIMIT ?,?`,
 				(pageNumber-1)*pageSize, pageSize)
 			if err != nil {
@@ -294,7 +321,6 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 			if err != nil {
 				totalRows = 0
 			}
-			tx.Commit()
 
 			totalPages := int64(math.Ceil(float64(totalRows) / float64(pageSize)))
 
@@ -311,7 +337,7 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 			m["sql"] = sql
 		}
 	} else {
-		headers, dataArray, err := gosqljson.QueryDbToArray(db, "", sql)
+		headers, dataArray, err := gosqljson.QueryTxToArray(tx, "", sql)
 		if err != nil {
 			return nil, err
 		}
@@ -362,15 +388,7 @@ func query(dbo gorest2.DataOperator, sql string, pageNumber int64, pageSize int6
 	return m, nil
 }
 
-func exec(dbo gorest2.DataOperator, sql string) ([]int64, error) {
-	db, err := dbo.GetConn()
-	if err != nil {
-		return []int64{}, err
-	}
-	tx, err := db.Begin()
-	if err != nil {
-		return []int64{}, err
-	}
+func exec(tx *sql.Tx, sql string) ([]int64, error) {
 	rowsAffectedArray := make([]int64, 0)
 	sqls, err := gosplitargs.SplitArgs(sql, ";", true)
 	for _, s := range sqls {
@@ -380,11 +398,9 @@ func exec(dbo gorest2.DataOperator, sql string) ([]int64, error) {
 		}
 		rowsAffected, err := gosqljson.ExecTx(tx, s)
 		if err != nil {
-			tx.Rollback()
 			return rowsAffectedArray, err
 		}
 		rowsAffectedArray = append(rowsAffectedArray, rowsAffected)
 	}
-	tx.Commit()
 	return rowsAffectedArray, nil
 }
