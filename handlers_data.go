@@ -97,29 +97,53 @@ func init() {
 		if err != nil {
 			return
 		}
-		tx, err := db.Begin()
 
-		sql := r.FormValue("sql")
+		sqls, err := gosplitargs.SplitArgs(r.FormValue("sql"), ";", true)
+		if err != nil {
+			return
+		}
 
 		if projectId == "" {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			fmt.Fprint(w, `{"err":"Invalid sql."}`)
 			return
 		}
-		m := map[string]interface{}{}
 
-		rowsAffected, err := exec(tx, sql)
-		if err != nil {
-			tx.Rollback()
-			m["err"] = err.Error()
-			fmt.Println(err)
+		ms := make([]map[string]interface{}, 0, len(sqls))
+
+		tx, err := db.Begin()
+		for _, sql := range sqls {
+			emptySql := true
+			lines := strings.Split(sql, "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line != "" && !strings.HasPrefix(line, "-- ") {
+					emptySql = false
+					break
+				}
+			}
+			if emptySql {
+				continue
+			}
+
+			m := map[string]interface{}{}
+
+			rowsAffected, err := exec(tx, sql)
+			m["rowsAffected"] = rowsAffected
+
+			if err != nil {
+				tx.Rollback()
+				m["err"] = err.Error()
+				fmt.Println(err)
+			}
+			ms = append(ms, m)
 		}
 		tx.Commit()
-		m["rowsAffected"] = rowsAffected
-		jsonData, err := json.Marshal(m)
+
+		jsonData, err := json.Marshal(ms)
 		if err != nil {
-			m["err"] = err.Error()
-			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		jsonString := string(jsonData)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -157,8 +181,8 @@ func init() {
 		m, err := query(tx, sql, pageNumber, pageSize, order, dir, mode)
 		if err != nil {
 			tx.Rollback()
-			m["err"] = err.Error()
-			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		} else {
 			tx.Commit()
 		}
@@ -174,7 +198,6 @@ func init() {
 	})
 
 	gorest2.RegisterHandler("/query_all", func(w http.ResponseWriter, r *http.Request) {
-		sqls := strings.Split(r.FormValue("sql"), ";")
 		pageNumber, err := strconv.ParseInt(r.FormValue("page"), 10, 0)
 		if err != nil || pageNumber < 1 {
 			pageNumber = 1
@@ -182,6 +205,11 @@ func init() {
 		pageSize, err := strconv.ParseInt(r.FormValue("limit"), 10, 0)
 		if err != nil {
 			pageSize = 1000
+		}
+
+		sqls, err := gosplitargs.SplitArgs(r.FormValue("sql"), ";", true)
+		if err != nil {
+			return
 		}
 
 		order := r.FormValue("sort")
@@ -199,6 +227,7 @@ func init() {
 		if err != nil {
 			return
 		}
+
 		tx, err := db.Begin()
 		for _, sql := range sqls {
 			emptySql := true
@@ -388,22 +417,11 @@ func query(tx *sql.Tx, sql string, pageNumber int64, pageSize int64, order strin
 	return m, nil
 }
 
-func exec(tx *sql.Tx, sql string) ([]int64, error) {
-	rowsAffectedArray := make([]int64, 0)
-	sqls, err := gosplitargs.SplitArgs(sql, ";", true)
+func exec(tx *sql.Tx, sql string) (int64, error) {
+	sqlCheck(&sql)
+	rowsAffected, err := gosqljson.ExecTx(tx, sql)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	for _, s := range sqls {
-		sqlCheck(&s)
-		if len(s) == 0 {
-			continue
-		}
-		rowsAffected, err := gosqljson.ExecTx(tx, s)
-		if err != nil {
-			return rowsAffectedArray, err
-		}
-		rowsAffectedArray = append(rowsAffectedArray, rowsAffected)
-	}
-	return rowsAffectedArray, nil
+	return rowsAffected, nil
 }
