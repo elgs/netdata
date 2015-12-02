@@ -7,6 +7,7 @@ import (
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
+	"strings"
 )
 
 type NdDataOperator struct {
@@ -55,6 +56,10 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 		return nil, err
 	}
 
+	clientIp := context["client_ip"].(string)
+	for i, param := range params {
+		params[i] = strings.Replace(param.(string), "__ip__", clientIp, -1)
+	}
 	script := query["SCRIPT"]
 
 	ret := make([]map[string]string, 0)
@@ -101,6 +106,11 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 		return nil, nil, err
 	}
 
+	clientIp := context["client_ip"].(string)
+	for i, param := range params {
+		params[i] = strings.Replace(param.(string), "__ip__", clientIp, -1)
+	}
+
 	db, err := this.GetConn()
 	if err != nil {
 		return nil, nil, err
@@ -139,6 +149,12 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 func (this *NdDataOperator) Exec(tableId string, params []interface{}, context map[string]interface{}) ([]int64, error) {
 	rowsAffectedArray := make([]int64, 0)
 	projectId := context["app_id"].(string)
+
+	clientIp := context["client_ip"].(string)
+	for i, param := range params {
+		params[i] = strings.Replace(param.(string), "__ip__", clientIp, -1)
+	}
+
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
 		return rowsAffectedArray, err
