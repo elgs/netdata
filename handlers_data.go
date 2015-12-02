@@ -266,6 +266,7 @@ func init() {
 					break
 				}
 				m["rowsAffected"] = rowsAffected
+				m["sql"] = sql
 				ms = append(ms, m)
 			}
 		}
