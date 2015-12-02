@@ -57,11 +57,8 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 	}
 
 	clientIp := context["client_ip"].(string)
-	for i, param := range params {
-		params[i] = strings.Replace(param.(string), "__ip__", clientIp, -1)
-	}
 	script := query["SCRIPT"]
-
+	script = strings.Replace(script, "__ip__", clientIp, -1)
 	ret := make([]map[string]string, 0)
 	db, err := this.GetConn()
 	if err != nil {
@@ -101,15 +98,13 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, context map[string]interface{}) ([]string, [][]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
-	script := query["SCRIPT"]
 	if err != nil {
 		return nil, nil, err
 	}
 
 	clientIp := context["client_ip"].(string)
-	for i, param := range params {
-		params[i] = strings.Replace(param.(string), "__ip__", clientIp, -1)
-	}
+	script := query["SCRIPT"]
+	script = strings.Replace(script, "__ip__", clientIp, -1)
 
 	db, err := this.GetConn()
 	if err != nil {
@@ -160,6 +155,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, context m
 		return rowsAffectedArray, err
 	}
 	scripts := query["SCRIPT"]
+	scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
 
 	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
 	if err != nil {
