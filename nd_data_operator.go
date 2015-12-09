@@ -105,6 +105,10 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 	clientIp := context["client_ip"].(string)
 	script := query["SCRIPT"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
+	count, err := gosplitargs.CountSeparators(s, "\\?")
+	if err != nil {
+		return nil, nil, err
+	}
 
 	db, err := this.GetConn()
 	if err != nil {
@@ -126,7 +130,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 	}
 
 	c := context["case"].(string)
-	h, a, err := gosqljson.QueryDbToArray(db, c, script, params...)
+	h, a, err := gosqljson.QueryDbToArray(db, c, script, params[:count]...)
 	if err != nil {
 		fmt.Println(err)
 		return nil, nil, err
