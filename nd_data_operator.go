@@ -105,7 +105,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 	clientIp := context["client_ip"].(string)
 	script := query["SCRIPT"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
-	count, err := gosplitargs.CountSeparators(s, "\\?")
+	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
 		return nil, nil, err
 	}
