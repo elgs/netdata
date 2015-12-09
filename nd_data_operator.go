@@ -56,10 +56,17 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 		return nil, err
 	}
 
+	ret := make([]map[string]string, 0)
+
 	clientIp := context["client_ip"].(string)
 	script := query["SCRIPT"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
-	ret := make([]map[string]string, 0)
+	script = strings.Replace(script, "__ip__", clientIp, -1)
+	count, err := gosplitargs.CountSeparators(script, "\\?")
+	if err != nil {
+		return ret, err
+	}
+
 	db, err := this.GetConn()
 	if err != nil {
 		return ret, err
@@ -80,7 +87,7 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 	}
 
 	c := context["case"].(string)
-	m, err := gosqljson.QueryDbToMap(db, c, script, params...)
+	m, err := gosqljson.QueryDbToMap(db, c, script, params[:count]...)
 	if err != nil {
 		fmt.Println(err)
 		return ret, err
