@@ -66,6 +66,9 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 	if err != nil {
 		return ret, err
 	}
+	if count > len(params) {
+		return nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", count, " actual: ", len(params)))
+	}
 
 	db, err := this.GetConn()
 	if err != nil {
@@ -115,6 +118,9 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
 		return nil, nil, err
+	}
+	if count > len(params) {
+		return nil, nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", count, " actual: ", len(params)))
 	}
 
 	db, err := this.GetConn()
