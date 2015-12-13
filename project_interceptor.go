@@ -67,7 +67,7 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 		userToken := context["user_token"]
 		v := userToken.(map[string]string)
 		memberData := map[string]interface{}{
-			"ID":           uuid.NewV4().String(),
+			"ID":           strings.Replace(uuid.NewV4().String(), "-", "", -1),
 			"USER_EMAIL":   member,
 			"PROJECT_ID":   projectId,
 			"PROJECT_NAME": data["NAME"],

@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -521,16 +522,16 @@ func CreateUser(db *sql.DB, userData map[string]interface{}) error {
 		status = "0"
 	}
 	user := map[string]interface{}{
-		"ID":           uuid.NewV4().String(),
+		"ID":           strings.Replace(uuid.NewV4().String(), "-", "", -1),
 		"TYPE":         userData["type"],
-		"TOKEN_KEY":    uuid.NewV4().String(),
+		"TOKEN_KEY":    strings.Replace(uuid.NewV4().String(), "-", "", -1),
 		"STATUS":       status,
 		"USERNAME":     userData["name"],
 		"EMAIL":        userData["email"],
 		"PHONE_NUMBER": phoneNumber,
 		"PICTURE_URL":  picture,
 		"PASSWORD":     password,
-		"TMP_KEY":      uuid.NewV4().String(),
+		"TMP_KEY":      strings.Replace(uuid.NewV4().String(), "-", "", -1),
 		"LAST_LOGIN":   time.Now(),
 		"CREATOR_ID":   "system",
 		"CREATOR_CODE": "system",

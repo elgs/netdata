@@ -18,7 +18,7 @@ func init() {
 }
 
 func isDefaultProjectRequest(context map[string]interface{}) bool {
-	return len(context["app_id"].(string)) != 36
+	return len(context["app_id"].(string)) != 36 || len(context["app_id"].(string)) != 32
 }
 
 var acl = make(map[string]map[string]bool)
