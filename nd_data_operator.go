@@ -69,6 +69,10 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 		return nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", count, " actual: ", len(params)))
 	}
 
+	for i, v := range queryParams {
+		script = strings.Replace(script, fmt.Sprint("$", i), v, 1)
+	}
+
 	db, err := this.GetConn()
 	if err != nil {
 		return ret, err
@@ -120,6 +124,10 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 	}
 	if count > len(params) {
 		return nil, nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", count, " actual: ", len(params)))
+	}
+
+	for i, v := range queryParams {
+		script = strings.Replace(script, fmt.Sprint("$", i), v, 1)
 	}
 
 	db, err := this.GetConn()
