@@ -49,7 +49,7 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 	return queryData[0], nil
 }
 
-func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, context map[string]interface{}) ([]map[string]string, error) {
+func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, queryParams []interface{}, context map[string]interface{}) ([]map[string]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
@@ -60,7 +60,6 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 
 	clientIp := context["client_ip"].(string)
 	script := query["SCRIPT"]
-	script = strings.Replace(script, "__ip__", clientIp, -1)
 	script = strings.Replace(script, "__ip__", clientIp, -1)
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
@@ -105,7 +104,7 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, conte
 
 	return m, err
 }
-func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, context map[string]interface{}) ([]string, [][]string, error) {
+func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, queryParams []interface{}, context map[string]interface{}) ([]string, [][]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
@@ -158,7 +157,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, con
 
 	return h, a, err
 }
-func (this *NdDataOperator) Exec(tableId string, params []interface{}, context map[string]interface{}) ([]int64, error) {
+func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryParams []interface{}, context map[string]interface{}) ([]int64, error) {
 	rowsAffectedArray := make([]int64, 0)
 	projectId := context["app_id"].(string)
 
