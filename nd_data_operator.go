@@ -70,7 +70,7 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 	}
 
 	for i, v := range queryParams {
-		script = strings.Replace(script, fmt.Sprint("$", i), v, 1)
+		script = strings.Replace(script, fmt.Sprint("$", i), v, -1)
 	}
 
 	db, err := this.GetConn()
@@ -127,7 +127,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 	}
 
 	for i, v := range queryParams {
-		script = strings.Replace(script, fmt.Sprint("$", i), v, 1)
+		script = strings.Replace(script, fmt.Sprint("$", i), v, -1)
 	}
 
 	db, err := this.GetConn()
@@ -182,7 +182,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
 
 	for i, v := range queryParams {
-		scripts = strings.Replace(scripts, fmt.Sprint("$", i), v, 1)
+		scripts = strings.Replace(scripts, fmt.Sprint("$", i), v, -1)
 	}
 
 	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
