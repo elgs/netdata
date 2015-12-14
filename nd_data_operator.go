@@ -181,6 +181,10 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	scripts := query["SCRIPT"]
 	scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
 
+	for i, v := range queryParams {
+		scripts = strings.Replace(scripts, fmt.Sprint("$", i), v, 1)
+	}
+
 	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
 	if err != nil {
 		return rowsAffectedArray, err
