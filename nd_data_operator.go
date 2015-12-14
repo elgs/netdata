@@ -49,7 +49,7 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 	return queryData[0], nil
 }
 
-func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, queryParams []interface{}, context map[string]interface{}) ([]map[string]string, error) {
+func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]map[string]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
@@ -104,7 +104,7 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 
 	return m, err
 }
-func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, queryParams []interface{}, context map[string]interface{}) ([]string, [][]string, error) {
+func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]string, [][]string, error) {
 	projectId := context["app_id"].(string)
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
@@ -157,7 +157,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 
 	return h, a, err
 }
-func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryParams []interface{}, context map[string]interface{}) ([]int64, error) {
+func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]int64, error) {
 	rowsAffectedArray := make([]int64, 0)
 	projectId := context["app_id"].(string)
 
