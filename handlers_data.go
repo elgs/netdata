@@ -10,6 +10,7 @@ import (
 	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
 	"github.com/gorilla/websocket"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"sort"
@@ -82,6 +83,25 @@ func init() {
 		writer.Write(headers)
 		writer.WriteAll(data)
 		writer.Flush()
+	})
+
+	gorest2.RegisterHandler("/upload_csv", func(w http.ResponseWriter, r *http.Request) {
+		file, header, err := r.FormFile("file")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, err)
+			return
+		}
+		defer file.Close()
+		fmt.Println(file)
+		fmt.Println(header)
+		b, err := ioutil.ReadAll(file)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, err)
+			return
+		}
+		fmt.Println(string(b))
 	})
 
 	gorest2.RegisterHandler("/exec", func(w http.ResponseWriter, r *http.Request) {
