@@ -10,12 +10,13 @@ import (
 	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
 	"github.com/gorilla/websocket"
-	"io/ioutil"
+	"github.com/satori/go.uuid"
 	"math"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var wsMsgQueue = make(chan interface{}, 100)
@@ -86,22 +87,80 @@ func init() {
 	})
 
 	gorest2.RegisterHandler("/upload_csv", func(w http.ResponseWriter, r *http.Request) {
-		file, header, err := r.FormFile("file")
+		projectId := r.FormValue("app_id")
+		if projectId == "" {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			fmt.Fprint(w, `{"err":"Invalid app."}`)
+			return
+		}
+		dbo := gorest2.GetDbo(projectId)
+		db, err := dbo.GetConn()
+		if err != nil {
+			fmt.Fprint(w, err.Error())
+			return
+		}
+		file, _, err := r.FormFile("file")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, err)
 			return
 		}
 		defer file.Close()
-		fmt.Println(file)
-		fmt.Println(header)
-		b, err := ioutil.ReadAll(file)
+		table := r.FormValue("table")
+		reader := csv.NewReader(file)
+
+		rawCSVdata, err := reader.ReadAll()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, err)
 			return
 		}
-		fmt.Println(string(b))
+		if len(rawCSVdata) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Invalid data uploaded.")
+			return
+		}
+		header := rawCSVdata[0]
+		data := make(map[string]interface{})
+		noID := false
+		noCraeteTime := false
+		noUpdateTime := false
+		for i, row := range rawCSVdata {
+			if i == 0 {
+				//Skip header
+				continue
+			}
+			for j, v := range header {
+				data[v] = row[j]
+			}
+			if i == 1 {
+				if _, ok := data["ID"]; !ok {
+					noID = true
+				}
+				if _, ok := data["CREATE_TIME"]; !ok {
+					noCraeteTime = true
+				}
+				if _, ok := data["UPDATE_TIME"]; !ok {
+					noUpdateTime = true
+				}
+			}
+			if noID {
+				data["ID"] = strings.Replace(uuid.NewV4().String(), "-", "", -1)
+			}
+			if noCraeteTime {
+				data["CREATE_TIME"] = time.Now().UTC()
+			}
+			if noUpdateTime {
+				data["UPDATE_TIME"] = time.Now().UTC()
+			}
+			_, err := DbInsert(db, table, data)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, err)
+				return
+			}
+		}
+		fmt.Fprint(w, "Data loaded.")
 	})
 
 	gorest2.RegisterHandler("/exec", func(w http.ResponseWriter, r *http.Request) {
