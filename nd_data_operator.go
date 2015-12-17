@@ -79,14 +79,14 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 	}
 
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		ctn, err := globalDataInterceptor.BeforeQueryMap(tableId, script, params, db, context)
+		ctn, err := globalDataInterceptor.BeforeQueryMap(tableId, script, &params, db, context)
 		if !ctn {
 			return ret, err
 		}
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
 	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeQueryMap(tableId, script, params, db, context)
+		ctn, err := dataInterceptor.BeforeQueryMap(tableId, script, &params, db, context)
 		if !ctn {
 			return ret, err
 		}
@@ -100,10 +100,10 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 	}
 
 	if dataInterceptor != nil {
-		dataInterceptor.AfterQueryMap(tableId, script, params, db, context, m)
+		dataInterceptor.AfterQueryMap(tableId, script, &params, db, context, &m)
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		globalDataInterceptor.AfterQueryMap(tableId, script, params, db, context, m)
+		globalDataInterceptor.AfterQueryMap(tableId, script, &params, db, context, &m)
 	}
 
 	return m, err
@@ -136,14 +136,14 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 	}
 
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		ctn, err := globalDataInterceptor.BeforeQueryArray(tableId, script, params, db, context)
+		ctn, err := globalDataInterceptor.BeforeQueryArray(tableId, script, &params, db, context)
 		if !ctn {
 			return nil, nil, err
 		}
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
 	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeQueryArray(tableId, script, params, db, context)
+		ctn, err := dataInterceptor.BeforeQueryArray(tableId, script, &params, db, context)
 		if !ctn {
 			return nil, nil, err
 		}
@@ -157,10 +157,10 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 	}
 
 	if dataInterceptor != nil {
-		dataInterceptor.AfterQueryArray(tableId, script, params, db, context, h, a)
+		dataInterceptor.AfterQueryArray(tableId, script, &params, db, context, &h, &a)
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		globalDataInterceptor.AfterQueryArray(tableId, script, params, db, context, h, a)
+		globalDataInterceptor.AfterQueryArray(tableId, script, &params, db, context, &h, &a)
 	}
 
 	return h, a, err
@@ -199,7 +199,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 		return rowsAffectedArray, err
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		ctn, err := globalDataInterceptor.BeforeExec(tableId, scripts, params, tx, context)
+		ctn, err := globalDataInterceptor.BeforeExec(tableId, scripts, &params, tx, context)
 		if !ctn {
 			tx.Rollback()
 			return rowsAffectedArray, err
@@ -207,7 +207,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	}
 	dataInterceptor := gorest2.GetDataInterceptor(tableId)
 	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeExec(tableId, scripts, params, tx, context)
+		ctn, err := dataInterceptor.BeforeExec(tableId, scripts, &params, tx, context)
 		if !ctn {
 			tx.Rollback()
 			return rowsAffectedArray, err
@@ -239,14 +239,14 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	}
 
 	if dataInterceptor != nil {
-		err := dataInterceptor.AfterExec(tableId, scripts, params, tx, context)
+		err := dataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
 		if err != nil {
 			tx.Rollback()
 			return rowsAffectedArray, err
 		}
 	}
 	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
-		err := globalDataInterceptor.AfterExec(tableId, scripts, params, tx, context)
+		err := globalDataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
 		if err != nil {
 			tx.Rollback()
 			return rowsAffectedArray, err

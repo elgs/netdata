@@ -68,8 +68,8 @@ func (this *DataStoreInterceptor) BeforeListArray(resourceId string, db *sql.DB,
 	return false, nil
 }
 
-func (this *DataStoreInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data []map[string]string, total int64) error {
-	for _, dataStore := range data {
+func (this *DataStoreInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data *[]map[string]string, total int64) error {
+	for _, dataStore := range *data {
 		if dataStore["password"] != "" {
 			dataStore["password"] = ""
 		}

@@ -181,7 +181,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeListMap(resourceId string, db *
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "r")
 }
-func (this *GlobalTokenProjectInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data []map[string]string, total int64) error {
+func (this *GlobalTokenProjectInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data *[]map[string]string, total int64) error {
 	if isDefaultProjectRequest(context) {
 		return nil
 	}
@@ -193,43 +193,52 @@ func (this *GlobalTokenProjectInterceptor) BeforeListArray(resourceId string, db
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "r")
 }
-func (this *GlobalTokenProjectInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers []string, data [][]string, total int64) error {
+func (this *GlobalTokenProjectInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers *[]string, data *[][]string, total int64) error {
 	if isDefaultProjectRequest(context) {
 		return nil
 	}
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeQueryMap(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "rx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}, data []map[string]string) error {
+func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, data *[]map[string]string) error {
 	if isDefaultProjectRequest(context) {
 		return nil
 	}
+	if resourceId == "_login" {
+		if len(*data) == 1 {
+
+		} else {
+			fmt.Println(data)
+			*data = append(*data, map[string]string{"token": ""})
+			fmt.Println(data)
+		}
+	}
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "rx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, script string, params []interface{}, db *sql.DB, context map[string]interface{}, headers []string, data [][]string) error {
+func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	if isDefaultProjectRequest(context) {
 		return nil
 	}
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts string, params []interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "wx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params []interface{}, tx *sql.Tx, context map[string]interface{}) error {
+func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) error {
 	if isDefaultProjectRequest(context) {
 		return nil
 	}
