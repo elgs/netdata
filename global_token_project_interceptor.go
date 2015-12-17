@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
 	"strings"
@@ -211,11 +212,19 @@ func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, scri
 	}
 	if resourceId == "_login" {
 		if len(*data) == 1 {
-
+			user := (*data)[0]
+			token := jwt.New(jwt.SigningMethodHS256)
+			for k, v := range user {
+				token.Claims[k] = v
+			}
+			token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+			tokenString, err := token.SignedString([]byte(user["PASSWORD"] + user["password"]))
+			if err != nil {
+				return err
+			}
+			(*data)[0] = map[string]string{"token": tokenString}
 		} else {
-			fmt.Println(data)
 			*data = append(*data, map[string]string{"token": ""})
-			fmt.Println(data)
 		}
 	}
 	return nil
@@ -229,6 +238,10 @@ func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, s
 func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	if isDefaultProjectRequest(context) {
 		return nil
+	}
+	if resourceId == "_login" {
+		*headers = []string{}
+		*data = [][]string{}
 	}
 	return nil
 }
