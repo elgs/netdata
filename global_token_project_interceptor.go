@@ -214,12 +214,15 @@ func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, scri
 	if resourceId == "_login" {
 		if len(*data) == 1 {
 			user := (*data)[0]
+			pwEncrypted := user["PASSWORD"] + user["password"]
+			delete(user, "PASSWORD")
+			delete(user, "password")
 			token := jwt.New(jwt.SigningMethodHS256)
 			for k, v := range user {
 				token.Claims[k] = v
 			}
 			token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-			tokenString, err := token.SignedString([]byte(user["PASSWORD"] + user["password"]))
+			tokenString, err := token.SignedString([]byte(pwEncrypted))
 			if err != nil {
 				return err
 			}
