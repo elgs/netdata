@@ -210,6 +210,7 @@ func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, scri
 	if isDefaultProjectRequest(context) {
 		return nil
 	}
+	// TODO: move to a separate _login interceptor.
 	if resourceId == "_login" {
 		if len(*data) == 1 {
 			user := (*data)[0]
