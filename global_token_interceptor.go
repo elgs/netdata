@@ -88,10 +88,10 @@ func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, 
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["CREATOR_ID"] = userToken["ID"]
 			data["CREATOR_CODE"] = userToken["EMAIL"]
-			data["CREATE_TIME"] = time.Now()
+			data["CREATE_TIME"] = time.Now().UTC()
 			data["UPDATER_ID"] = userToken["ID"]
 			data["UPDATER_CODE"] = userToken["EMAIL"]
-			data["UPDATE_TIME"] = time.Now()
+			data["UPDATE_TIME"] = time.Now().UTC()
 		}
 	}
 	context["user_token"] = userToken
@@ -132,7 +132,7 @@ func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, 
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["UPDATER_ID"] = userToken["ID"]
 			data["UPDATER_CODE"] = userToken["EMAIL"]
-			data["UPDATE_TIME"] = time.Now()
+			data["UPDATE_TIME"] = time.Now().UTC()
 		}
 	}
 	context["user_token"] = userToken

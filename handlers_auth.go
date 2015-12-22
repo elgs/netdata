@@ -83,7 +83,6 @@ func init() {
 			fmt.Println(err)
 		}
 
-		// ignore the error if user existed.
 		err = FindOrCreateUser(db, tokenMap)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)

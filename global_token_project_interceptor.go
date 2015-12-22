@@ -109,8 +109,8 @@ func (this *GlobalTokenProjectInterceptor) BeforeCreate(resourceId string, db *s
 	ctn, err := checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "w")
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
-			data["CREATE_TIME"] = time.Now()
-			data["UPDATE_TIME"] = time.Now()
+			data["CREATE_TIME"] = time.Now().UTC()
+			data["UPDATE_TIME"] = time.Now().UTC()
 		}
 	}
 	return ctn, err
@@ -140,7 +140,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeUpdate(resourceId string, db *s
 	ctn, err := checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "w")
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
-			data["UPDATE_TIME"] = time.Now()
+			data["UPDATE_TIME"] = time.Now().UTC()
 		}
 	}
 	return ctn, err
