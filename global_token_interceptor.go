@@ -24,7 +24,10 @@ func isDefaultProjectRequest(context map[string]interface{}) bool {
 var acl = make(map[string]map[string]bool)
 var defaultTokenRegistry = make(map[string]map[string]string)
 
-func checkDefaultToken(key string) (bool, map[string]string, error) {
+func checkDefaultToken(key string, resouceId string) (bool, map[string]string, error) {
+	if strings.HasPrefix(resouceId, "__") {
+		return true, nil, nil
+	}
 	if key != "" && len(defaultTokenRegistry[key]) > 0 && defaultTokenRegistry[key]["TOKEN_KEY"] == key {
 		return true, defaultTokenRegistry[key], nil
 	}
@@ -83,7 +86,7 @@ func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, 
 	if ok, err := checkACL(resourceId, "create"); !ok {
 		return false, err
 	}
-	ctn, userToken, err := checkDefaultToken(context["token"].(string))
+	ctn, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["CREATOR_ID"] = userToken["ID"]
@@ -110,7 +113,7 @@ func (this *GlobalTokenInterceptor) BeforeLoad(resourceId string, db *sql.DB, fi
 	if ok, err := checkACL(resourceId, "load"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -127,7 +130,7 @@ func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, 
 	if ok, err := checkACL(resourceId, "update"); !ok {
 		return false, err
 	}
-	ctn, userToken, err := checkDefaultToken(context["token"].(string))
+	ctn, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["UPDATER_ID"] = userToken["ID"]
@@ -151,7 +154,7 @@ func (this *GlobalTokenInterceptor) BeforeDuplicate(resourceId string, db *sql.D
 	if ok, err := checkACL(resourceId, "duplicate"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -168,7 +171,7 @@ func (this *GlobalTokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, 
 	if ok, err := checkACL(resourceId, "delete"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -185,7 +188,7 @@ func (this *GlobalTokenInterceptor) BeforeListMap(resourceId string, db *sql.DB,
 	if ok, err := checkACL(resourceId, "list"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -202,7 +205,7 @@ func (this *GlobalTokenInterceptor) BeforeListArray(resourceId string, db *sql.D
 	if ok, err := checkACL(resourceId, "list"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -219,7 +222,7 @@ func (this *GlobalTokenInterceptor) BeforeQueryMap(resourceId string, script str
 	if ok, err := checkACL(resourceId, "query"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -236,7 +239,7 @@ func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, script s
 	if ok, err := checkACL(resourceId, "query"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }
@@ -253,7 +256,7 @@ func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string
 	if ok, err := checkACL(resourceId, "exec"); !ok {
 		return false, err
 	}
-	allow, userToken, err := checkDefaultToken(context["token"].(string))
+	allow, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	context["user_token"] = userToken
 	return allow, err
 }

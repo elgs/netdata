@@ -29,7 +29,7 @@ func (this *GlobalHandlerInterceptor) BeforeHandle(w http.ResponseWriter, r *htt
 		}
 		if projectId == "default" {
 			// for admin, check role
-			allow, _, err := checkDefaultToken(token)
+			allow, _, err := checkDefaultToken(token, r.URL.Path)
 			if !allow {
 				fmt.Println("auth failed:", r.URL.Path)
 			}
