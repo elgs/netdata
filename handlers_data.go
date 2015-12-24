@@ -99,15 +99,9 @@ func init() {
 			fmt.Fprint(w, err.Error())
 			return
 		}
-		file, _, err := r.FormFile("file")
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, err)
-			return
-		}
-		defer file.Close()
+		csvData := r.FormValue("data")
 		table := r.FormValue("table")
-		reader := csv.NewReader(file)
+		reader := csv.NewReader(strings.NewReader(csvData))
 
 		rawCSVdata, err := reader.ReadAll()
 		if err != nil {
