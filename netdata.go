@@ -60,6 +60,8 @@ func main() {
 	gorest2.DboRegistry["default"] = dbo
 	gorest2.GetDbo = makeGetDbo(dbType)
 
+	loadAllRemoteInterceptor()
+
 	if jobNode, ok := grConfig["job_node"].(bool); ok && jobNode {
 		startJobs()
 	}

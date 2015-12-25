@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/elgs/gorest2"
+	"github.com/elgs/gosqljson"
 )
 
 func init() {
 	loadACL()
 	gorest2.RegisterGlobalDataInterceptor(30, &GlobalRemoteInterceptor{Id: "GlobalRemoteInterceptor"})
-	loadAllRemoteInterceptor()
 }
 
 var RemoteInterceptorRegistry = map[string]*RemoteInterceptorDefinition{}
@@ -31,6 +31,32 @@ type RemoteInterceptorDefinition struct {
 
 func loadAllRemoteInterceptor() error {
 	// load all remote interceptor definitions into RemoteInterceptorRegistry
+	defaultDbo := gorest2.GetDbo("default")
+	defaultDb, err := defaultDbo.GetConn()
+	if err != nil {
+		return err
+	}
+	riData, err := gosqljson.QueryDbToMap(defaultDb, "upper", "SELECT * FROM remote_interceptor")
+	if err != nil {
+		return err
+	}
+	for _, riMap := range riData {
+		projectId := riMap["PROJECT_ID"]
+		target := riMap["TARGET"]
+		method := riMap["METHOD"]
+		url := riMap["URL"]
+		theType := riMap["TYPE"]
+		actionType := riMap["ACTION_TYPE"]
+		ri := &RemoteInterceptorDefinition{
+			ProjectId:  projectId,
+			Target:     target,
+			Type:       theType,
+			ActionType: actionType,
+			Method:     method,
+			Url:        url,
+		}
+		RemoteInterceptorRegistry[fmt.Sprint(projectId, target, theType, actionType)] = ri
+	}
 	return nil
 }
 
