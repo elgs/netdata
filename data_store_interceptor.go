@@ -11,7 +11,7 @@ import (
 
 func init() {
 	tableId := "netdata.data_store"
-	gorest2.RegisterDataInterceptor(tableId, &DataStoreInterceptor{Id: tableId})
+	gorest2.RegisterDataInterceptor(tableId, 0, &DataStoreInterceptor{Id: tableId})
 }
 
 type DataStoreInterceptor struct {

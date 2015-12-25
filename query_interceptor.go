@@ -9,7 +9,7 @@ import (
 
 func init() {
 	tableId := "netdata.query"
-	gorest2.RegisterDataInterceptor(tableId, &QueryInterceptor{Id: tableId})
+	gorest2.RegisterDataInterceptor(tableId, 0, &QueryInterceptor{Id: tableId})
 }
 
 type QueryInterceptor struct {

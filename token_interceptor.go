@@ -9,7 +9,7 @@ import (
 
 func init() {
 	tableId := "netdata.token"
-	gorest2.RegisterDataInterceptor(tableId, &TokenInterceptor{Id: tableId})
+	gorest2.RegisterDataInterceptor(tableId, 0, &TokenInterceptor{Id: tableId})
 }
 
 type TokenInterceptor struct {

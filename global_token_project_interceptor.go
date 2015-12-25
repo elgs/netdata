@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	gorest2.RegisterGlobalDataInterceptor(&GlobalTokenProjectInterceptor{Id: "GlobalTokenProjectInterceptor"})
+	gorest2.RegisterGlobalDataInterceptor(20, &GlobalTokenProjectInterceptor{Id: "GlobalTokenProjectInterceptor"})
 }
 
 type GlobalTokenProjectInterceptor struct {

@@ -14,7 +14,7 @@ import (
 
 func init() {
 	tableId := "netdata.project"
-	gorest2.RegisterDataInterceptor(tableId, &ProjectInterceptor{Id: tableId})
+	gorest2.RegisterDataInterceptor(tableId, 0, &ProjectInterceptor{Id: tableId})
 }
 
 type ProjectInterceptor struct {

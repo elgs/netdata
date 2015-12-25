@@ -78,17 +78,22 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 		return ret, err
 	}
 
-	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
+	globalDataInterceptors, globalSortedKeys := gorest2.GetGlobalDataInterceptors()
+	for _, k := range globalSortedKeys {
+		globalDataInterceptor := globalDataInterceptors[k]
 		ctn, err := globalDataInterceptor.BeforeQueryMap(tableId, script, &params, db, context)
 		if !ctn {
 			return ret, err
 		}
 	}
-	dataInterceptor := gorest2.GetDataInterceptor(tableId)
-	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeQueryMap(tableId, script, &params, db, context)
-		if !ctn {
-			return ret, err
+	dataInterceptors, sortedKeys := gorest2.GetDataInterceptors(tableId)
+	for _, k := range sortedKeys {
+		dataInterceptor := dataInterceptors[k]
+		if dataInterceptor != nil {
+			ctn, err := dataInterceptor.BeforeQueryMap(tableId, script, &params, db, context)
+			if !ctn {
+				return ret, err
+			}
 		}
 	}
 
@@ -99,10 +104,14 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 		return ret, err
 	}
 
-	if dataInterceptor != nil {
-		dataInterceptor.AfterQueryMap(tableId, script, &params, db, context, &m)
+	for _, k := range sortedKeys {
+		dataInterceptor := dataInterceptors[k]
+		if dataInterceptor != nil {
+			dataInterceptor.AfterQueryMap(tableId, script, &params, db, context, &m)
+		}
 	}
-	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
+	for _, k := range globalSortedKeys {
+		globalDataInterceptor := globalDataInterceptors[k]
 		globalDataInterceptor.AfterQueryMap(tableId, script, &params, db, context, &m)
 	}
 
@@ -135,17 +144,22 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 		return nil, nil, err
 	}
 
-	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
+	globalDataInterceptors, globalSortedKeys := gorest2.GetGlobalDataInterceptors()
+	for _, k := range globalSortedKeys {
+		globalDataInterceptor := globalDataInterceptors[k]
 		ctn, err := globalDataInterceptor.BeforeQueryArray(tableId, script, &params, db, context)
 		if !ctn {
 			return nil, nil, err
 		}
 	}
-	dataInterceptor := gorest2.GetDataInterceptor(tableId)
-	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeQueryArray(tableId, script, &params, db, context)
-		if !ctn {
-			return nil, nil, err
+	dataInterceptors, sortedKeys := gorest2.GetDataInterceptors(tableId)
+	for _, k := range sortedKeys {
+		dataInterceptor := dataInterceptors[k]
+		if dataInterceptor != nil {
+			ctn, err := dataInterceptor.BeforeQueryArray(tableId, script, &params, db, context)
+			if !ctn {
+				return nil, nil, err
+			}
 		}
 	}
 
@@ -156,10 +170,14 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 		return nil, nil, err
 	}
 
-	if dataInterceptor != nil {
-		dataInterceptor.AfterQueryArray(tableId, script, &params, db, context, &h, &a)
+	for _, k := range sortedKeys {
+		dataInterceptor := dataInterceptors[k]
+		if dataInterceptor != nil {
+			dataInterceptor.AfterQueryArray(tableId, script, &params, db, context, &h, &a)
+		}
 	}
-	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
+	for _, k := range globalSortedKeys {
+		globalDataInterceptor := globalDataInterceptors[k]
 		globalDataInterceptor.AfterQueryArray(tableId, script, &params, db, context, &h, &a)
 	}
 
@@ -198,19 +216,24 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	if err != nil {
 		return rowsAffectedArray, err
 	}
-	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
+	globalDataInterceptors, globalSortedKeys := gorest2.GetGlobalDataInterceptors()
+	for _, k := range globalSortedKeys {
+		globalDataInterceptor := globalDataInterceptors[k]
 		ctn, err := globalDataInterceptor.BeforeExec(tableId, scripts, &params, tx, context)
 		if !ctn {
 			tx.Rollback()
 			return rowsAffectedArray, err
 		}
 	}
-	dataInterceptor := gorest2.GetDataInterceptor(tableId)
-	if dataInterceptor != nil {
-		ctn, err := dataInterceptor.BeforeExec(tableId, scripts, &params, tx, context)
-		if !ctn {
-			tx.Rollback()
-			return rowsAffectedArray, err
+	dataInterceptors, sortedKeys := gorest2.GetDataInterceptors(tableId)
+	for _, k := range sortedKeys {
+		dataInterceptor := dataInterceptors[k]
+		if dataInterceptor != nil {
+			ctn, err := dataInterceptor.BeforeExec(tableId, scripts, &params, tx, context)
+			if !ctn {
+				tx.Rollback()
+				return rowsAffectedArray, err
+			}
 		}
 	}
 
@@ -238,14 +261,18 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 		totalCount += count
 	}
 
-	if dataInterceptor != nil {
-		err := dataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
-		if err != nil {
-			tx.Rollback()
-			return rowsAffectedArray, err
+	for _, k := range sortedKeys {
+		dataInterceptor := dataInterceptors[k]
+		if dataInterceptor != nil {
+			err := dataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
+			if err != nil {
+				tx.Rollback()
+				return rowsAffectedArray, err
+			}
 		}
 	}
-	for _, globalDataInterceptor := range gorest2.GlobalDataInterceptorRegistry {
+	for _, k := range globalSortedKeys {
+		globalDataInterceptor := globalDataInterceptors[k]
 		err := globalDataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
 		if err != nil {
 			tx.Rollback()

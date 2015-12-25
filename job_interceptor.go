@@ -8,7 +8,7 @@ import (
 
 func init() {
 	tableId := "netdata.job"
-	gorest2.RegisterDataInterceptor(tableId, &JobInterceptor{Id: tableId})
+	gorest2.RegisterDataInterceptor(tableId, 0, &JobInterceptor{Id: tableId})
 }
 
 type JobInterceptor struct {

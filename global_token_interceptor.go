@@ -14,7 +14,7 @@ import (
 
 func init() {
 	loadACL()
-	gorest2.RegisterGlobalDataInterceptor(&GlobalTokenInterceptor{Id: "GlobalTokenInterceptor"})
+	gorest2.RegisterGlobalDataInterceptor(10, &GlobalTokenInterceptor{Id: "GlobalTokenInterceptor"})
 }
 
 func isDefaultProjectRequest(context map[string]interface{}) bool {

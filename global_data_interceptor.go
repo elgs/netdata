@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	gorest2.RegisterGlobalDataInterceptor(&GlobalDataInterceptor{Id: "GlobalDataInterceptor"})
+	gorest2.RegisterGlobalDataInterceptor(0, &GlobalDataInterceptor{Id: "GlobalDataInterceptor"})
 }
 
 type GlobalDataInterceptor struct {
