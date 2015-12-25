@@ -110,6 +110,62 @@ func init() {
 			}
 		},
 	})
+
+	gorest2.RegisterJob("update_remote_interceptor", &gorest2.Job{
+		Cron: fmt.Sprint(rand.Intn(60), " * * * * *"),
+		MakeAction: func(dbo gorest2.DataOperator) func() {
+			lastUpdateSince := ""
+			return func() {
+				db, err := dbo.GetConn()
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				if lastUpdateSince == "" {
+					// minus the interval of this job (1 min) to eliminate the remote_interceptor changed before this job first run.
+					changedRIs, err := gosqljson.QueryDbToMap(db, "upper",
+						"SELECT UPDATE_TIME - INTERVAL 1 MINUTE AS UPDATE_TIME FROM remote_interceptor ORDER BY UPDATE_TIME DESC LIMIT 1")
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					if len(changedRIs) == 0 {
+						return
+					}
+					lastChangedToken := changedRIs[0]
+					lastUpdateSince = lastChangedToken["UPDATE_TIME"]
+				} else {
+					changedRIs, err := gosqljson.QueryDbToMap(db, "upper",
+						"SELECT * FROM remote_interceptor WHERE UPDATE_TIME>? ORDER BY UPDATE_TIME DESC", lastUpdateSince)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					for i, changedRI := range changedRIs {
+						projectId := changedRI["PROJECT_ID"]
+						target := changedRI["TARGET"]
+						method := changedRI["METHOD"]
+						url := changedRI["URL"]
+						theType := changedRI["TYPE"]
+						actionType := changedRI["ACTION_TYPE"]
+						ri := &RemoteInterceptorDefinition{
+							ProjectId:  projectId,
+							Target:     target,
+							Type:       theType,
+							ActionType: actionType,
+							Method:     method,
+							Url:        url,
+						}
+						RemoteInterceptorRegistry[fmt.Sprint(projectId, target, theType, actionType)] = ri
+						if i == 0 {
+							lastUpdateSince = changedRI["UPDATE_TIME"]
+						}
+					}
+				}
+			}
+		},
+	})
 }
 
 func httpRequest(url string, method string, data string, apiTokenId string, apiTokenKey string) ([]byte, error) {

@@ -62,12 +62,41 @@ func loadAllRemoteInterceptor() error {
 
 func loadRemoteInterceptor(projectId, target, theType, actionType string) error {
 	// load specific remote interceptor definitions into RemoteInterceptorRegistry
+	defaultDbo := gorest2.GetDbo("default")
+	defaultDb, err := defaultDbo.GetConn()
+	if err != nil {
+		return err
+	}
+	riData, err := gosqljson.QueryDbToMap(defaultDb,
+		"upper", "SELECT * FROM remote_interceptor WHERE PROJECT_ID=? AND TARGET=? AND TYPE=? AND ACTION_TYPE=?",
+		projectId, target, theType, actionType)
+	if err != nil {
+		return err
+	}
+	if riData != nil && len(riData) == 1 {
+		riMap := riData[0]
+		projectId := riMap["PROJECT_ID"]
+		target := riMap["TARGET"]
+		method := riMap["METHOD"]
+		url := riMap["URL"]
+		theType := riMap["TYPE"]
+		actionType := riMap["ACTION_TYPE"]
+		ri := &RemoteInterceptorDefinition{
+			ProjectId:  projectId,
+			Target:     target,
+			Type:       theType,
+			ActionType: actionType,
+			Method:     method,
+			Url:        url,
+		}
+		RemoteInterceptorRegistry[fmt.Sprint(projectId, target, theType, actionType)] = ri
+	}
 	return nil
 }
 
-func unloadRemoteInterceptor(projectId, target, theType, actionType string) error {
+func unloadRemoteInterceptor(projectId, target, theType, actionType string) {
 	// unload specific remote interceptor definitions into RemoteInterceptorRegistry
-	return nil
+	delete(RemoteInterceptorRegistry, fmt.Sprint(projectId, target, theType, actionType))
 }
 
 func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(ri *RemoteInterceptorDefinition) (bool, error) {
