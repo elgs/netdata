@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
+	"github.com/elgs/gosqljson"
+	"github.com/satori/go.uuid"
+	"strings"
+	"time"
 )
 
 func init() {
@@ -37,7 +41,15 @@ func (this *TokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, contex
 }
 
 func (this *TokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	this.commonAfterCreateOrUpdateToken(context["old_data"].(map[string]string)["TOKEN"])
+	token := context["old_data"].(map[string]string)["TOKEN"]
+	this.commonAfterCreateOrUpdateToken(token)
+	recordId := strings.Replace(uuid.NewV4().String(), "-", "", -1)
+	now := time.Now().UTC()
+	_, err := gosqljson.ExecDb(db, `INSERT INTO revoked_list(ID,PROJECT_ID,OBJECT_ID,OBJECT_TYPE,CREATE_TIME,UPDATE_TIME)
+	VALUES(?,?,?,?,?,?)`, recordId, context["old_data"].(map[string]string)["PROJECT_ID"], token, "token", now, now)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
