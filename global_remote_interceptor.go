@@ -11,6 +11,8 @@ func init() {
 	gorest2.RegisterGlobalDataInterceptor(30, &GlobalRemoteInterceptor{Id: "GlobalRemoteInterceptor"})
 }
 
+var RemoteInterceptorRegistry = map[string]*RemoteInterceptorDefinition{}
+
 type GlobalRemoteInterceptor struct {
 	*gorest2.DefaultDataInterceptor
 	Id string
@@ -20,7 +22,7 @@ type RemoteInterceptorDefinition struct {
 	ProjectId  string
 	Target     string // table name, query name
 	Method     string // POST, GET
-	Url        stirng
+	Url        string
 	Type       string // before, after
 	ActionType string // create, load, update, delete, ...
 }
