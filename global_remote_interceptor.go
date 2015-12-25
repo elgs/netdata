@@ -16,6 +16,15 @@ type GlobalRemoteInterceptor struct {
 	Id string
 }
 
+type RemoteInterceptorDefinition struct {
+	ProjectId  string
+	Target     string // table name, query name
+	Method     string // POST, GET
+	Url        stirng
+	Type       string // before, after
+	ActionType string // create, load, update, delete, ...
+}
+
 func (this *GlobalRemoteInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
 	return true, nil
 }
