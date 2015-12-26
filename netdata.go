@@ -62,7 +62,7 @@ func main() {
 
 	loadAllRemoteInterceptor()
 
-	if jobNode, ok := grConfig["job_node"].(bool); ok && jobNode {
+	if mainNode, ok := grConfig["main_node"].(bool); ok && mainNode {
 		startJobs()
 	}
 

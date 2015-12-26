@@ -13,6 +13,7 @@ import (
 type NdDataOperator struct {
 	*gorest2.MySqlDataOperator
 	QueryRegistry map[string]map[string]string
+	TokenRegistry map[string]map[string]string
 }
 
 func NewDbo(ds, dbType string) gorest2.DataOperator {
