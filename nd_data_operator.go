@@ -45,7 +45,7 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 		return nil, errors.New("Query not found.")
 	}
 
-	err = redisMaster.HMSet(key, "name", queryData[0]["NAME"], "script", queryData[0]["script"]).Err()
+	err = redisMaster.HMSet(key, "name", queryData[0]["NAME"], "script", queryData[0]["SCRIPT"]).Err()
 	return queryData[0], nil
 }
 
