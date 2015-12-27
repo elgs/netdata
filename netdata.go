@@ -92,6 +92,7 @@ func main() {
 	mainNode = grConfig["main_node"].(bool)
 	if mainNode {
 		startJobs()
+		redisMaster.FlushDb()
 		loadAllRemoteInterceptor()
 	}
 
