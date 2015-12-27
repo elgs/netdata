@@ -6,6 +6,7 @@ import (
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
 	_ "github.com/go-sql-driver/mysql"
+	"gopkg.in/redis.v3"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -44,6 +45,9 @@ var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
 }
 
 var grConfig gorest2.Gorest
+var redisMaster *redis.Client
+var redisLocal *redis.Client
+var mainNode bool = false
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -52,6 +56,31 @@ func main() {
 	if grConfig == nil {
 		return
 	}
+
+	redisMasterAddress := grConfig["redis_master_address"].(string)
+	redisMasterPassword := grConfig["redis_master_password"].(string)
+	redisMaster := redis.NewClient(&redis.Options{
+		Addr:     redisMasterAddress,
+		Password: redisMasterPassword,
+	})
+	_, err := redisMaster.Ping().Result()
+	if err != nil {
+		fmt.Println(nil)
+		return
+	}
+
+	redisLocalAddress := grConfig["redis_local_address"].(string)
+	redisLocalPassword := grConfig["redis_local_password"].(string)
+	redisLocal := redis.NewClient(&redis.Options{
+		Addr:     redisLocalAddress,
+		Password: redisLocalPassword,
+	})
+	_, err = redisLocal.Ping().Result()
+	if err != nil {
+		fmt.Println(nil)
+		return
+	}
+
 	ds := grConfig["data_source"].(string)
 	dbType := grConfig["db_type"].(string)
 
@@ -60,10 +89,10 @@ func main() {
 	gorest2.DboRegistry["default"] = dbo
 	gorest2.GetDbo = makeGetDbo(dbType)
 
-	loadAllRemoteInterceptor()
-
-	if mainNode, ok := grConfig["main_node"].(bool); ok && mainNode {
+	mainNode = grConfig["main_node"].(bool)
+	if mainNode {
 		startJobs()
+		loadAllRemoteInterceptor()
 	}
 
 	gorest2.RegisterHandler("/api", gorest2.RestFunc)

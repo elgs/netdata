@@ -19,7 +19,7 @@ type GlobalTokenProjectInterceptor struct {
 	Id string
 }
 
-var projectTokenRegistry = make(map[string]map[string]string)
+//var projectTokenRegistry = make(map[string]map[string]string)
 
 // server, client, server, client
 func checkAccessPermission(targets, tableId, mode, op string) bool {
@@ -48,10 +48,12 @@ func checkAccessPermission(targets, tableId, mode, op string) bool {
 	return tableMatch && opMatch
 }
 
-func checkProjectToken(projectId string, key string, tableId string, op string) (bool, error) {
-	if projectId != "" && key != "" && len(projectTokenRegistry[key]) > 0 &&
-		projectTokenRegistry[key]["TOKEN"] == key && projectTokenRegistry[key]["PROJECT_ID"] == projectId {
-		if checkAccessPermission(projectTokenRegistry[key]["TARGETS"], tableId, projectTokenRegistry[key]["MODE"], op) {
+func checkProjectToken(projectId string, token string, tableId string, op string) (bool, error) {
+	key := fmt.Sprint("token:", projectId, ":", token)
+	tokenMap := redisLocal.HGetAllMap(token).Val()
+
+	if projectId != "" && token != "" && len(tokenMap) > 0 {
+		if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
 			return true, nil
 		} else {
 			return false, errors.New("Authentication failed.")
@@ -65,15 +67,18 @@ func checkProjectToken(projectId string, key string, tableId string, op string) 
 		return false, err
 	}
 	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
-		"SELECT * FROM token WHERE PROJECT_ID=? AND TOKEN=? AND STATUS=?", projectId, key, "0")
+		"SELECT * FROM token WHERE PROJECT_ID=? AND TOKEN=? AND STATUS=?", projectId, token, "0")
 	if err != nil {
 		fmt.Println(err)
 		return false, err
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		projectTokenRegistry[key] = record
-		if checkAccessPermission(projectTokenRegistry[key]["TARGETS"], tableId, projectTokenRegistry[key]["MODE"], op) {
+		err := redisMaster.HMSet(key, "targets", record["TARGETS"], "mode", record["MODE"]).Err()
+		if err != nil {
+			return false, err
+		}
+		if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
 			return true, nil
 		} else {
 			return false, errors.New("Authentication failed.")
@@ -82,17 +87,17 @@ func checkProjectToken(projectId string, key string, tableId string, op string) 
 		userData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
 			`SELECT u.TOKEN_KEY AS TOKEN,up.PROJECT_ID FROM user AS u INNER JOIN user_project AS up ON u.EMAIL=up.USER_EMAIL 
 			WHERE u.TOKEN_KEY=? AND up.PROJECT_ID=? AND u.STATUS=? AND up.STATUS=?`,
-			key, projectId, "0", "0")
+			token, projectId, "0", "0")
 		if err != nil {
 			fmt.Println(err)
 			return false, err
 		}
 		if userData != nil && len(userData) > 0 {
-			userData[0]["MODE"] = "rwx"
-			userData[0]["TARGETS"] = "*"
-			record := userData[0]
-			projectTokenRegistry[key] = record
-			if checkAccessPermission(projectTokenRegistry[key]["TARGETS"], tableId, projectTokenRegistry[key]["MODE"], op) {
+			err := redisMaster.HMSet(key, "targets", "rwx", "mode", "*").Err()
+			if err != nil {
+				return false, err
+			}
+			if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
 				return true, nil
 			} else {
 				return false, errors.New("Authentication failed.")

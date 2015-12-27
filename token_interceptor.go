@@ -5,10 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
-	"github.com/elgs/gosqljson"
-	"github.com/satori/go.uuid"
-	"strings"
-	"time"
 )
 
 func init() {
@@ -21,8 +17,10 @@ type TokenInterceptor struct {
 	Id string
 }
 
-func (this *TokenInterceptor) commonAfterCreateOrUpdateToken(token string) {
-	delete(projectTokenRegistry, token)
+func (this *TokenInterceptor) commonAfterCreateOrUpdateToken(projectId, token string) error {
+	key := fmt.Sprint("token:", projectId, ":", token)
+	err := redisMaster.Del(key).Err()
+	return err
 }
 
 func (this *TokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
@@ -31,8 +29,9 @@ func (this *TokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, contex
 }
 
 func (this *TokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	this.commonAfterCreateOrUpdateToken(context["old_data"].(map[string]string)["TOKEN"])
-	return nil
+	token := context["old_data"].(map[string]string)["TOKEN"]
+	projectId := context["old_data"].(map[string]string)["PROJECT_ID"]
+	return this.commonAfterCreateOrUpdateToken(projectId, token)
 }
 
 func (this *TokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
@@ -42,15 +41,8 @@ func (this *TokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, contex
 
 func (this *TokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
 	token := context["old_data"].(map[string]string)["TOKEN"]
-	this.commonAfterCreateOrUpdateToken(token)
-	recordId := strings.Replace(uuid.NewV4().String(), "-", "", -1)
-	now := time.Now().UTC()
-	_, err := gosqljson.ExecDb(db, `INSERT INTO revoked_list(ID,PROJECT_ID,OBJECT_ID,OBJECT_TYPE,CREATE_TIME,UPDATE_TIME)
-	VALUES(?,?,?,?,?,?)`, recordId, context["old_data"].(map[string]string)["PROJECT_ID"], token, "token", now, now)
-	if err != nil {
-		return err
-	}
-	return nil
+	projectId := context["old_data"].(map[string]string)["PROJECT_ID"]
+	return this.commonAfterCreateOrUpdateToken(projectId, token)
 }
 
 func (this *TokenInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {

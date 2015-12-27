@@ -12,8 +12,6 @@ import (
 
 type NdDataOperator struct {
 	*gorest2.MySqlDataOperator
-	QueryRegistry map[string]map[string]string
-	TokenRegistry map[string]map[string]string
 }
 
 func NewDbo(ds, dbType string) gorest2.DataOperator {
@@ -22,32 +20,33 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 			Ds:     ds,
 			DbType: dbType,
 		},
-		QueryRegistry: make(map[string]map[string]string),
+		//		QueryRegistry: make(map[string]map[string]string),
 	}
 }
 
 func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]string, error) {
-	query := this.QueryRegistry[queryName]
-	if query != nil {
-		return query, nil
-	}
+	//	query := this.QueryRegistry[queryName]
+	//	if query != nil {
+	//		return query, nil
+	//	}
 
-	defaultDbo := gorest2.GetDbo("default")
-	defaultDb, err := defaultDbo.GetConn()
-	if err != nil {
-		return nil, err
-	}
-	queryData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
-		"SELECT * FROM query WHERE PROJECT_ID=? AND NAME=?", projectId, queryName)
-	if err != nil {
-		return nil, err
-	}
-	if len(queryData) == 0 {
-		return nil, errors.New("Query not found.")
-	}
+	//	defaultDbo := gorest2.GetDbo("default")
+	//	defaultDb, err := defaultDbo.GetConn()
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	queryData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
+	//		"SELECT * FROM query WHERE PROJECT_ID=? AND NAME=?", projectId, queryName)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	if len(queryData) == 0 {
+	//		return nil, errors.New("Query not found.")
+	//	}
 
-	this.QueryRegistry[queryName] = queryData[0]
-	return queryData[0], nil
+	//	this.QueryRegistry[queryName] = queryData[0]
+	//	return queryData[0], nil
+	return nil, nil
 }
 
 func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]map[string]string, error) {
