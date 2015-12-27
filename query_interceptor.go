@@ -5,10 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
-	"github.com/elgs/gosqljson"
-	"github.com/satori/go.uuid"
-	"strings"
-	"time"
 )
 
 func init() {
@@ -21,11 +17,11 @@ type QueryInterceptor struct {
 	Id string
 }
 
-func (this *QueryInterceptor) commonAfterCreateOrUpdateQuery(context map[string]interface{}) {
-	//	queryName := context["old_data"].(map[string]string)["NAME"]
-	//	appId := context["old_data"].(map[string]string)["PROJECT_ID"]
-	//	dbo := gorest2.GetDbo(appId).(*NdDataOperator)
-	//		delete(dbo.QueryRegistry, queryName)
+func (this *QueryInterceptor) commonAfterCreateOrUpdateQuery(context map[string]interface{}) error {
+	queryName := context["old_data"].(map[string]string)["NAME"]
+	appId := context["old_data"].(map[string]string)["PROJECT_ID"]
+	key := fmt.Sprint("query:", appId, ":", queryName)
+	return redisMaster.Del(key).Err()
 }
 
 func (this *QueryInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
@@ -34,8 +30,7 @@ func (this *QueryInterceptor) BeforeUpdate(resourceId string, db *sql.DB, contex
 }
 
 func (this *QueryInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	this.commonAfterCreateOrUpdateQuery(context)
-	return nil
+	return this.commonAfterCreateOrUpdateQuery(context)
 }
 
 func (this *QueryInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
@@ -44,15 +39,7 @@ func (this *QueryInterceptor) BeforeDelete(resourceId string, db *sql.DB, contex
 }
 
 func (this *QueryInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	this.commonAfterCreateOrUpdateQuery(context)
-	recordId := strings.Replace(uuid.NewV4().String(), "-", "", -1)
-	now := time.Now().UTC()
-	_, err := gosqljson.ExecDb(db, `INSERT INTO revoked_list(ID,PROJECT_ID,OBJECT_ID,OBJECT_TYPE,CREATE_TIME,UPDATE_TIME)
-	VALUES(?,?,?,?,?,?)`, recordId, context["old_data"].(map[string]string)["PROJECT_ID"], context["old_data"].(map[string]string)["NAME"], "query", now, now)
-	if err != nil {
-		return err
-	}
-	return nil
+	return this.commonAfterCreateOrUpdateQuery(context)
 }
 
 func (this *QueryInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
