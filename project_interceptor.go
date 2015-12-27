@@ -74,10 +74,10 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 			"STATUS":       "0",
 			"CREATOR_ID":   v["id"],
 			"CREATOR_CODE": v["email"],
-			"CREATE_TIME":  time.Now(),
+			"CREATE_TIME":  time.Now().UTC(),
 			"UPDATER_ID":   v["id"],
 			"UPDATER_CODE": v["email"],
-			"UPDATE_TIME":  time.Now(),
+			"UPDATE_TIME":  time.Now().UTC(),
 		}
 		_, err = TxInsert(tx, "user_project", memberData)
 		if err != nil {
