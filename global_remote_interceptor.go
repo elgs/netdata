@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
+	"strings"
 )
 
 func init() {
@@ -90,183 +91,89 @@ func (this *GlobalRemoteInterceptor) executeAfterRemoteInterceptor(ri map[string
 	return nil
 }
 
-func (this *GlobalRemoteInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map[string]interface{}, action string) (bool, error) {
+	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
+	resourceId = rts[len(rts)-1]
+	fmt.Println("before:", resourceId)
 	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:create")
+	key := fmt.Sprint("ri:", appId, ":", resourceId, action)
 	ri := redisLocal.HGetAllMap(key).Val()
 	if len(ri) == 0 {
 		return true, nil
 	}
 	return this.checkAgainstBeforeRemoteInterceptor(ri)
+}
+
+func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[string]interface{}, action string) error {
+	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
+	resourceId = rts[len(rts)-1]
+	fmt.Println("after:", resourceId)
+	appId := context["app_id"].(string)
+	key := fmt.Sprint("ri:", appId, ":", resourceId, action)
+	ri := redisLocal.HGetAllMap(key).Val()
+	if len(ri) == 0 {
+		return nil
+	}
+	return this.executeAfterRemoteInterceptor(ri)
+}
+
+func (this *GlobalRemoteInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+	return this.commonBefore(resourceId, context, ":before:create")
 }
 func (this *GlobalRemoteInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:create")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:create")
 }
 func (this *GlobalRemoteInterceptor) BeforeLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, id string) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:load")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:load")
 }
 func (this *GlobalRemoteInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:load")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:load")
 }
 func (this *GlobalRemoteInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:update")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:update")
 }
 func (this *GlobalRemoteInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:update")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:update")
 }
 func (this *GlobalRemoteInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:duplicate")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:duplicate")
 }
 func (this *GlobalRemoteInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:duplicate")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:duplicate")
 }
 func (this *GlobalRemoteInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:delete")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:delete")
 }
 func (this *GlobalRemoteInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:delete")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:delete")
 }
 func (this *GlobalRemoteInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:listmap")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:listmap")
 }
 func (this *GlobalRemoteInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data *[]map[string]string, total int64) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:listmap")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:listmap")
 }
 func (this *GlobalRemoteInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:listarray")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:listarray")
 }
 func (this *GlobalRemoteInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers *[]string, data *[][]string, total int64) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:listarray")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:listarray")
 }
 func (this *GlobalRemoteInterceptor) BeforeQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:querymap")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:querymap")
 }
 func (this *GlobalRemoteInterceptor) AfterQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, data *[]map[string]string) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:querymap")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:querymap")
 }
 func (this *GlobalRemoteInterceptor) BeforeQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:queryarray")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:queryarray")
 }
 func (this *GlobalRemoteInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:queryarray")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:queryarray")
 }
 func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:exec")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return true, nil
-	}
-	return this.checkAgainstBeforeRemoteInterceptor(ri)
+	return this.commonBefore(resourceId, context, ":before:exec")
 }
 func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) error {
-	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:exec")
-	ri := redisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
-		return nil
-	}
-	return this.executeAfterRemoteInterceptor(ri)
+	return this.commonAfter(resourceId, context, ":after:exec")
 }
