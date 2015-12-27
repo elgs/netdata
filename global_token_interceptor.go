@@ -23,8 +23,6 @@ func isDefaultProjectRequest(context map[string]interface{}) bool {
 
 var acl = make(map[string]map[string]bool)
 
-//var defaultTokenRegistry = make(map[string]map[string]string)
-
 func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string, error) {
 	if strings.HasPrefix(resouceId, "__") {
 		return true, nil, nil

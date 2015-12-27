@@ -78,7 +78,7 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 		if err != nil {
 			return false, err
 		}
-		if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
+		if checkAccessPermission(record["TARGETS"], tableId, record["MODE"], op) {
 			return true, nil
 		} else {
 			return false, errors.New("Authentication failed.")
@@ -93,15 +93,11 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 			return false, err
 		}
 		if userData != nil && len(userData) > 0 {
-			err := redisMaster.HMSet(key, "targets", "rwx", "mode", "*").Err()
+			err := redisMaster.HMSet(key, "targets", "*", "mode", "rwx").Err()
 			if err != nil {
 				return false, err
 			}
-			if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
-				return true, nil
-			} else {
-				return false, errors.New("Authentication failed.")
-			}
+			return true, nil
 		}
 	}
 	return false, errors.New("Authentication failed.")
