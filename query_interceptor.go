@@ -25,7 +25,7 @@ func (this *QueryInterceptor) commonAfterCreateOrUpdateQuery(context map[string]
 	//	queryName := context["old_data"].(map[string]string)["NAME"]
 	//	appId := context["old_data"].(map[string]string)["PROJECT_ID"]
 	//	dbo := gorest2.GetDbo(appId).(*NdDataOperator)
-	//	delete(dbo.QueryRegistry, queryName)
+	//		delete(dbo.QueryRegistry, queryName)
 }
 
 func (this *QueryInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {

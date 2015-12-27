@@ -25,28 +25,28 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 }
 
 func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]string, error) {
-	//	query := this.QueryRegistry[queryName]
-	//	if query != nil {
-	//		return query, nil
-	//	}
+	key := fmt.Sprint("query:", projectId, ":", queryName)
+	queryMap := redisLocal.HGetAllMap(key).Val()
+	if len(queryMap) > 0 {
+		return queryMap, nil
+	}
 
-	//	defaultDbo := gorest2.GetDbo("default")
-	//	defaultDb, err := defaultDbo.GetConn()
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	queryData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
-	//		"SELECT * FROM query WHERE PROJECT_ID=? AND NAME=?", projectId, queryName)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	if len(queryData) == 0 {
-	//		return nil, errors.New("Query not found.")
-	//	}
+	defaultDbo := gorest2.GetDbo("default")
+	defaultDb, err := defaultDbo.GetConn()
+	if err != nil {
+		return nil, err
+	}
+	queryData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
+		"SELECT * FROM query WHERE PROJECT_ID=? AND NAME=?", projectId, queryName)
+	if err != nil {
+		return nil, err
+	}
+	if len(queryData) == 0 {
+		return nil, errors.New("Query not found.")
+	}
 
-	//	this.QueryRegistry[queryName] = queryData[0]
-	//	return queryData[0], nil
-	return nil, nil
+	err = redisMaster.HMSet(key, "name", queryData[0]["NAME"], "script", queryData[0]["script"]).Err()
+	return queryData[0], nil
 }
 
 func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]map[string]string, error) {
@@ -59,7 +59,7 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 	ret := make([]map[string]string, 0)
 
 	clientIp := context["client_ip"].(string)
-	script := query["SCRIPT"]
+	script := query["script"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
@@ -125,7 +125,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 	}
 
 	clientIp := context["client_ip"].(string)
-	script := query["SCRIPT"]
+	script := query["script"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
@@ -196,7 +196,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	if err != nil {
 		return rowsAffectedArray, err
 	}
-	scripts := query["SCRIPT"]
+	scripts := query["script"]
 	scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
 
 	for i, v := range queryParams {
