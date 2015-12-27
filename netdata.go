@@ -59,7 +59,7 @@ func main() {
 
 	redisMasterAddress := grConfig["redis_master_address"].(string)
 	redisMasterPassword := grConfig["redis_master_password"].(string)
-	redisMaster := redis.NewClient(&redis.Options{
+	redisMaster = redis.NewClient(&redis.Options{
 		Addr:     redisMasterAddress,
 		Password: redisMasterPassword,
 	})
@@ -71,7 +71,7 @@ func main() {
 
 	redisLocalAddress := grConfig["redis_local_address"].(string)
 	redisLocalPassword := grConfig["redis_local_password"].(string)
-	redisLocal := redis.NewClient(&redis.Options{
+	redisLocal = redis.NewClient(&redis.Options{
 		Addr:     redisLocalAddress,
 		Password: redisLocalPassword,
 	})
