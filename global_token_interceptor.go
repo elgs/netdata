@@ -22,14 +22,18 @@ func isDefaultProjectRequest(context map[string]interface{}) bool {
 }
 
 var acl = make(map[string]map[string]bool)
-var defaultTokenRegistry = make(map[string]map[string]string)
 
-func checkDefaultToken(key string, resouceId string) (bool, map[string]string, error) {
+//var defaultTokenRegistry = make(map[string]map[string]string)
+
+func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string, error) {
 	if strings.HasPrefix(resouceId, "__") {
 		return true, nil, nil
 	}
-	if key != "" && len(defaultTokenRegistry[key]) > 0 && defaultTokenRegistry[key]["TOKEN_KEY"] == key {
-		return true, defaultTokenRegistry[key], nil
+
+	key := fmt.Sprint("dtoken:", dToken)
+	dTokenMap := redisLocal.HGetAllMap(key).Val()
+	if dToken != "" && len(dTokenMap) > 0 {
+		return true, dTokenMap, nil
 	}
 
 	defaultDbo := gorest2.GetDbo("default")
@@ -39,14 +43,14 @@ func checkDefaultToken(key string, resouceId string) (bool, map[string]string, e
 		return false, nil, err
 	}
 	userQuery := `SELECT user.* FROM user WHERE user.TOKEN_KEY=? AND user.STATUS=?`
-	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper", userQuery, key, "0")
+	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper", userQuery, dToken, "0")
 	if err != nil {
 		fmt.Println(err)
 		return false, nil, err
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		defaultTokenRegistry[key] = record
+		redisMaster.HMSet(key, "id", record["ID"], "email", record["EMAIL"])
 		return true, record, nil
 	}
 	return false, nil, errors.New("Authentication failed.")
