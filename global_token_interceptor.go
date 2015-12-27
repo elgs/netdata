@@ -50,7 +50,7 @@ func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		redisMaster.HMSet(key, "id", record["ID"], "email", record["EMAIL"])
+		redisMaster.HMSet(key, "ID", record["ID"], "EMAIL", record["EMAIL"])
 		return true, record, nil
 	}
 	return false, nil, errors.New("Authentication failed.")

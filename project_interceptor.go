@@ -136,8 +136,8 @@ func (this *ProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, conte
 func filterPorjects(context map[string]interface{}, filter *string) (bool, error) {
 	userToken := context["user_token"]
 	if v, ok := userToken.(map[string]string); ok {
-		userId := v["id"]
-		userEmail := v["email"]
+		userId := v["ID"]
+		userEmail := v["EMAIL"]
 		gorest2.MysqlSafe(&userId)
 		*filter += fmt.Sprint(` AND (CREATOR_ID='`, userId, `' 
 			OR EXISTS (SELECT 1 FROM user_project WHERE project.ID=user_project.PROJECT_ID AND user_project.USER_EMAIL='`+userEmail+`'))`)
@@ -151,7 +151,7 @@ func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, cont
 	// check ownership
 	userToken := context["user_token"]
 	if v, ok := userToken.(map[string]string); ok {
-		userId := v["id"]
+		userId := v["ID"]
 		gorest2.MysqlSafe(&userId)
 		data, err := gosqljson.QueryDbToMap(db, "", `SELECT * FROM project WHERE ID=? AND CREATOR_ID=?`, id, userId)
 		if err != nil || len(data) != 1 {
