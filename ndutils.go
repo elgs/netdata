@@ -29,7 +29,7 @@ func httpRequest(url string, method string, data string) ([]byte, int, error) {
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	res.Body = &LimitedReadCloser{res.Body, int64(len([]byte(data)))}
+	res.Body = &LimitedReadCloser{res.Body, int64(len([]byte(data)) - 1)}
 
 	result, err := ioutil.ReadAll(res.Body)
 
