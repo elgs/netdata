@@ -3,6 +3,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
@@ -84,8 +85,14 @@ func unloadRemoteInterceptor(projectId, target, theType, actionType string) erro
 }
 
 func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) (bool, error) {
-	fmt.Println(ri)
-	return true, nil
+	res, err := httpRequest(ri["url"], ri["method"], data)
+	if err != nil {
+		return false, err
+	}
+	if string(res) == data {
+		return true, nil
+	}
+	return false, errors.New("Client rejected.")
 }
 
 func (this *GlobalRemoteInterceptor) executeAfterRemoteInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) error {

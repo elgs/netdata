@@ -65,7 +65,7 @@ func main() {
 	})
 	_, err := redisMaster.Ping().Result()
 	if err != nil {
-		fmt.Println(nil)
+		fmt.Println(err)
 		return
 	}
 
@@ -77,7 +77,7 @@ func main() {
 	})
 	_, err = redisLocal.Ping().Result()
 	if err != nil {
-		fmt.Println(nil)
+		fmt.Println(err)
 		return
 	}
 
