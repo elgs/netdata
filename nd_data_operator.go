@@ -264,7 +264,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	for _, k := range sortedKeys {
 		dataInterceptor := dataInterceptors[k]
 		if dataInterceptor != nil {
-			err := dataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
+			err := dataInterceptor.AfterExec(tableId, scripts, &params, tx, context, rowsAffectedArray)
 			if err != nil {
 				tx.Rollback()
 				return rowsAffectedArray, err
@@ -273,7 +273,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	}
 	for _, k := range globalSortedKeys {
 		globalDataInterceptor := globalDataInterceptors[k]
-		err := globalDataInterceptor.AfterExec(tableId, scripts, &params, tx, context)
+		err := globalDataInterceptor.AfterExec(tableId, scripts, &params, tx, context, rowsAffectedArray)
 		if err != nil {
 			tx.Rollback()
 			return rowsAffectedArray, err

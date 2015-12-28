@@ -203,6 +203,6 @@ func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts
 	}
 	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "wx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) error {
+func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
 	return nil
 }

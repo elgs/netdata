@@ -235,6 +235,6 @@ func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) error {
+func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
 	return nil
 }
