@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/elgs/cron"
 	"github.com/elgs/gorest2"
+	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
 	"net/http"
 )
@@ -21,17 +22,32 @@ func init() {
 			}()
 			script := job["SCRIPT"]
 			projectId := job["PROJECT_ID"]
+
+			scriptsArray, err := gosplitargs.SplitArgs(script, ";", true)
+			if err != nil {
+				return
+			}
+
 			dbo := gorest2.GetDbo(projectId)
 			db, err := dbo.GetConn()
 			if err != nil {
-				fmt.Println()
+				fmt.Println(err)
 				return
 			}
-			_, err = gosqljson.ExecDb(db, script)
+			tx, err := db.Begin()
 			if err != nil {
-				fmt.Println()
+				fmt.Println(err)
 				return
 			}
+			for _, s := range scriptsArray {
+				_, err = gosqljson.ExecTx(tx, s)
+				if err != nil {
+					tx.Rollback()
+					fmt.Println(err)
+					return
+				}
+			}
+			tx.Commit()
 		}
 	}
 
