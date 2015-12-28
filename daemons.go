@@ -51,22 +51,32 @@ func init() {
 					fmt.Println(err)
 					return
 				}
-				good := make([]interface{}, 0, 50)
-				bad := make([]interface{}, 0, 50)
+				dataLen := len(data)
+				good := make([]interface{}, 0, dataLen/2+1)
+				bad := make([]interface{}, 0, dataLen/2+1)
+
+				c := make(chan int, dataLen)
 				for _, v := range data {
-					testUrl := strings.ToLower(v["url"])
-					if strings.Contains(testUrl, "://localhost") ||
-						strings.Contains(testUrl, "netdata.io") ||
-						strings.Contains(testUrl, "://127.0.") {
-						bad = append(bad, v["ID"])
-						continue
-					}
-					_, _, err = httpRequest(v["URL"], v["METHOD"], v["DATA"])
-					if err == nil {
-						good = append(good, v["ID"])
-					} else {
-						bad = append(bad, v["ID"])
-					}
+					go func(v map[string]string) {
+						testUrl := strings.ToLower(v["url"])
+						if strings.Contains(testUrl, "://localhost") ||
+							strings.Contains(testUrl, "netdata.io") ||
+							strings.Contains(testUrl, "://127.0.") {
+							bad = append(bad, v["ID"])
+							c <- 1
+							return
+						}
+						_, _, err = httpRequest(v["URL"], v["METHOD"], v["DATA"])
+						if err == nil {
+							good = append(good, v["ID"])
+						} else {
+							bad = append(bad, v["ID"])
+						}
+						c <- 1
+					}(v)
+				}
+				for i := 0; i < dataLen; i++ {
+					<-c
 				}
 				if len(good) > 0 {
 					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=-1 WHERE ID IN(%v)`, GeneratePlaceholders(len(good))), good...)
