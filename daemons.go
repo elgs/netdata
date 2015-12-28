@@ -3,10 +3,11 @@ package main
 import (
 	//	"bytes"
 	//	"crypto/tls"
-	//	"fmt"
+	"fmt"
 	"github.com/elgs/gorest2"
-	//	"github.com/elgs/gosqljson"
+	"github.com/elgs/gosqljson"
 	//	"io/ioutil"
+	"github.com/satori/go.uuid"
 	"math/rand"
 	//	"net/http"
 	"time"
@@ -19,7 +20,52 @@ func init() {
 		Cron: "0 0 * * * *",
 		MakeAction: func(dbo gorest2.DataOperator) func() {
 			return func() {
+			}
+		},
+	})
 
+	gorest2.RegisterJob("send_push_notifications", &gorest2.Job{
+		Cron: "*/5 * * * * *",
+		MakeAction: func(dbo gorest2.DataOperator) func() {
+			return func() {
+				if !mainNode {
+					return
+				}
+				statusId := uuid.NewV4().String()
+				db, err := dbo.GetConn()
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				rowAffected, err := gosqljson.ExecDb(db, `UPDATE push_notification SET STATUS=? WHERE STATUS=0 ORDER BY CREATE_TIME LIMIT 100`, statusId)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if rowAffected == 0 {
+					return
+				}
+				data, err := gosqljson.QueryDbToMap(db, "", `SELECT * FROM push_notification WHERE STATUS=?`, statusId)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				good := make([]interface{}, 0, 50)
+				bad := make([]interface{}, 0, 50)
+				for _, v := range data {
+					_, _, err = httpRequest(v["URL"], v["METHOD"], v["DATA"])
+					if err == nil {
+						good = append(good, v["ID"])
+					} else {
+						bad = append(bad, v["ID"])
+					}
+				}
+				if len(good) > 0 {
+					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=-1 WHERE ID IN(%v)`, GeneratePlaceholders(len(good))), good...)
+				}
+				if len(bad) > 0 {
+					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=1 WHERE ID IN(%v)`, GeneratePlaceholders(len(bad))), bad...)
+				}
 			}
 		},
 	})

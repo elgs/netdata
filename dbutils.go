@@ -7,6 +7,9 @@ import (
 )
 
 func GeneratePlaceholders(n int) string {
+	if n <= 0 {
+		return ""
+	}
 	var ret string
 	for i := 0; i < n; i++ {
 		ret += "?,"
@@ -15,6 +18,9 @@ func GeneratePlaceholders(n int) string {
 }
 
 func GenerateFields(data map[string]interface{}) (string, []interface{}) {
+	if len(data) == 0 {
+		return "", []interface{}{}
+	}
 	var fields string
 	var values []interface{}
 	for k, v := range data {
@@ -25,6 +31,9 @@ func GenerateFields(data map[string]interface{}) (string, []interface{}) {
 }
 
 func GenerateConditions(conditions map[string]interface{}) (string, []interface{}) {
+	if len(conditions) == 0 {
+		return "", []interface{}{}
+	}
 	var fields string
 	var values []interface{}
 	for k, v := range conditions {
