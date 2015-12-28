@@ -79,10 +79,10 @@ func init() {
 					<-c
 				}
 				if len(good) > 0 {
-					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=-1 WHERE ID IN(%v)`, GeneratePlaceholders(len(good))), good...)
+					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=-1, UPDATE_TIME=CONVERT_TZ(NOW(),'System','+0:0') WHERE ID IN(%v)`, GeneratePlaceholders(len(good))), good...)
 				}
 				if len(bad) > 0 {
-					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=1 WHERE ID IN(%v)`, GeneratePlaceholders(len(bad))), bad...)
+					gosqljson.ExecDb(db, fmt.Sprintf(`UPDATE push_notification SET STATUS=1, UPDATE_TIME=CONVERT_TZ(NOW(),'System','+0:0') WHERE ID IN(%v)`, GeneratePlaceholders(len(bad))), bad...)
 				}
 			}
 		},
