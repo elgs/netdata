@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func httpRequest(url string, method string, data string) ([]byte, error) {
+func httpRequest(url string, method string, data string) ([]byte, int, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println(err)
@@ -22,16 +22,16 @@ func httpRequest(url string, method string, data string) ([]byte, error) {
 	client := &http.Client{Transport: tr}
 	req, err := http.NewRequest(method, url, strings.NewReader(data))
 	if err != nil {
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
 	defer tr.CloseIdleConnections()
 
-	return body, err
+	return body, res.StatusCode, err
 }
