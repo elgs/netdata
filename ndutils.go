@@ -4,7 +4,6 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -29,9 +28,13 @@ func httpRequest(url string, method string, data string) ([]byte, int, error) {
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	body, err := ioutil.ReadAll(res.Body)
+	buffer := make([]byte, len(data))
+	_, err = res.Body.Read(buffer)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
 	defer res.Body.Close()
 	defer tr.CloseIdleConnections()
 
-	return body, res.StatusCode, err
+	return buffer, res.StatusCode, err
 }
