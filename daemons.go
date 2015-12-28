@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	//	"bytes"
 	//	"crypto/tls"
 	"fmt"
@@ -53,6 +54,13 @@ func init() {
 				good := make([]interface{}, 0, 50)
 				bad := make([]interface{}, 0, 50)
 				for _, v := range data {
+					testUrl := strings.ToLower(v["url"])
+					if strings.Contains(testUrl, "://localhost") ||
+						strings.Contains(testUrl, "netdata.io") ||
+						strings.Contains(testUrl, "://127.0.") {
+						bad = append(bad, v["ID"])
+						continue
+					}
 					_, _, err = httpRequest(v["URL"], v["METHOD"], v["DATA"])
 					if err == nil {
 						good = append(good, v["ID"])
