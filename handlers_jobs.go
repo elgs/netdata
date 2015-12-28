@@ -25,6 +25,7 @@ func init() {
 
 			scriptsArray, err := gosplitargs.SplitArgs(script, ";", true)
 			if err != nil {
+				fmt.Println(err)
 				return
 			}
 
@@ -40,6 +41,10 @@ func init() {
 				return
 			}
 			for _, s := range scriptsArray {
+				sqlCheck(&s)
+				if len(s) == 0 {
+					continue
+				}
 				_, err = gosqljson.ExecTx(tx, s)
 				if err != nil {
 					tx.Rollback()
