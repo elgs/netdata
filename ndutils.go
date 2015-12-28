@@ -32,6 +32,9 @@ func httpRequest(url string, method string, data string) ([]byte, int, error) {
 	res.Body = &LimitedReadCloser{res.Body, int64(len([]byte(data)) - 1)}
 
 	result, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
 
 	defer res.Body.Close()
 	defer tr.CloseIdleConnections()
