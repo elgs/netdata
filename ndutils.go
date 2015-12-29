@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func httpRequest(url string, method string, data string) ([]byte, int, error) {
+func httpRequest(url string, method string, data string, maxReadLimit int64) ([]byte, int, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println(err)
@@ -29,7 +29,9 @@ func httpRequest(url string, method string, data string) ([]byte, int, error) {
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	res.Body = &LimitedReadCloser{res.Body, int64(len([]byte(data)))}
+	if maxReadLimit >= 0 {
+		res.Body = &LimitedReadCloser{res.Body, maxReadLimit}
+	}
 
 	result, err := ioutil.ReadAll(res.Body)
 	if err != nil {

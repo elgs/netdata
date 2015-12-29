@@ -66,7 +66,7 @@ func init() {
 							c <- 1
 							return
 						}
-						_, _, err = httpRequest(v["URL"], v["METHOD"], v["DATA"])
+						_, _, err = httpRequest(v["URL"], v["METHOD"], v["DATA"], 0)
 						if err == nil {
 							good = append(good, v["ID"])
 						} else {

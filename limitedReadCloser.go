@@ -2,7 +2,6 @@
 package main
 
 import (
-	"errors"
 	"io"
 )
 
@@ -13,7 +12,7 @@ type LimitedReadCloser struct {
 
 func (l *LimitedReadCloser) Read(p []byte) (n int, err error) {
 	if l.N <= 0 {
-		return 0, errors.New("http: response body too large")
+		return 0, io.EOF
 	}
 	if int64(len(p)) > l.N {
 		p = p[0:l.N]

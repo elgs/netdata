@@ -86,7 +86,7 @@ func unloadRemoteInterceptor(projectId, target, theType, actionType string) erro
 }
 
 func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) (bool, error) {
-	res, status, err := httpRequest(ri["url"], ri["method"], data)
+	res, status, err := httpRequest(ri["url"], ri["method"], data, int64(len([]byte(data))))
 	if err != nil {
 		return false, err
 	}
