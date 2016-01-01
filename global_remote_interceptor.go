@@ -42,10 +42,11 @@ func loadAllRemoteInterceptor() error {
 		target := riMap["TARGET"]
 		theType := riMap["TYPE"]
 		actionType := riMap["ACTION_TYPE"]
+		condition := riMap["CONDITION"]
 		method := riMap["METHOD"]
 		url := riMap["URL"]
-		key := fmt.Sprint("ri:", projectId, ":", target, ":", theType, ":", actionType)
-		pipe.HMSet(key, "method", method, "url", url)
+		key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
+		pipe.HMSet(key, "method", method, "url", url, "condition", condition)
 	}
 	_, err = pipe.Exec()
 	return err
@@ -72,15 +73,16 @@ func loadRemoteInterceptor(projectId, target, theType, actionType string) error 
 		url := riMap["URL"]
 		theType := riMap["TYPE"]
 		actionType := riMap["ACTION_TYPE"]
-		key := fmt.Sprint("ri:", projectId, ":", target, ":", theType, ":", actionType)
-		redisMaster.HMSet(key, "method", method, "url", url)
+		condition := riMap["CONDITION"]
+		key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
+		redisMaster.HMSet(key, "method", method, "url", url, "condition", condition)
 	}
 	return nil
 }
 
 func unloadRemoteInterceptor(projectId, target, theType, actionType string) error {
 	// unload specific remote interceptor definitions into RemoteInterceptorRegistry
-	key := fmt.Sprint("ri:", projectId, ":", target, ":", theType, ":", actionType)
+	key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
 	err := redisMaster.HDel(key).Err()
 	return err
 }
@@ -115,7 +117,7 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":before:", action)
+	key := strings.Join([]string{"ri", appId, resourceId, "before", action}, ":")
 	ri := redisLocal.HGetAllMap(key).Val()
 	if len(ri) == 0 {
 		return true, nil
@@ -127,7 +129,7 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
-	key := fmt.Sprint("ri:", appId, ":", resourceId, ":after:", action)
+	key := strings.Join([]string{"ri", appId, resourceId, "after", action}, ":")
 	ri := redisLocal.HGetAllMap(key).Val()
 	if len(ri) == 0 {
 		return nil
