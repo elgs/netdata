@@ -35,7 +35,7 @@ func init() {
 	gorest2.RegisterHandler("/sys/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 		if err != nil {
-			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer conn.Close()
@@ -68,12 +68,12 @@ func init() {
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
-			fmt.Fprint(w, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		headers, data, err := gosqljson.QueryDbToArray(db, "", sql)
 		if err != nil {
-			fmt.Fprint(w, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -96,7 +96,7 @@ func init() {
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
-			fmt.Fprint(w, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		csvData := r.FormValue("data")
@@ -105,8 +105,7 @@ func init() {
 
 		rawCSVdata, err := reader.ReadAll()
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		if len(rawCSVdata) == 0 {
@@ -149,8 +148,7 @@ func init() {
 			}
 			_, err := DbInsert(db, table, data)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -168,11 +166,13 @@ func init() {
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		sqls, err := gosplitargs.SplitArgs(r.FormValue("sql"), ";", true)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -185,6 +185,10 @@ func init() {
 		ms := make([]map[string]interface{}, 0, len(sqls))
 
 		tx, err := db.Begin()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		for _, sql := range sqls {
 			emptySql := true
 			lines := strings.Split(sql, "\n")
@@ -247,6 +251,7 @@ func init() {
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		tx, err := db.Begin()
@@ -282,6 +287,7 @@ func init() {
 
 		sqls, err := gosplitargs.SplitArgs(r.FormValue("sql"), ";", true)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -298,10 +304,15 @@ func init() {
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		tx, err := db.Begin()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		for _, sql := range sqls {
 			emptySql := true
 			lines := strings.Split(sql, "\n")

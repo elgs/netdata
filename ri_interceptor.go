@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"errors"
+	//	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
 )
@@ -53,14 +53,15 @@ func (this *RiInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields
 }
 
 func (this *RiInterceptor) filterInterceptors(context map[string]interface{}, filter *string) (bool, error) {
-	userToken := context["user_token"]
-	if v, ok := userToken.(map[string]string); ok {
-		userId := v["ID"]
-		userEmail := v["EMAIL"]
-		gorest2.MysqlSafe(&userId)
-		*filter += fmt.Sprint(` AND (CREATOR_ID='`, userId, `' AND PROJECT_ID=`)
-		return true, nil
-	} else {
-		return false, errors.New("Invalid interceptor.")
-	}
+	//	userToken := context["user_token"]
+	//	if v, ok := userToken.(map[string]string); ok {
+	//		userId := v["ID"]
+	//		userEmail := v["EMAIL"]
+	//		gorest2.MysqlSafe(&userId)
+	//		*filter += fmt.Sprint(` AND (CREATOR_ID='`, userId, `' AND PROJECT_ID=`)
+	//		return true, nil
+	//	} else {
+	//		return false, errors.New("Invalid interceptor.")
+	//	}
+	return true, nil
 }
