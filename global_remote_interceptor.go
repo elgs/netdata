@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
+	"github.com/elgs/jsonql"
 	"github.com/satori/go.uuid"
 	"strings"
 	"time"
@@ -113,7 +113,7 @@ func (this *GlobalRemoteInterceptor) executeAfterRemoteInterceptor(data string, 
 	return err
 }
 
-func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map[string]interface{}, action string, data string) (bool, error) {
+func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map[string]interface{}, action string, data interface{}) (bool, error) {
 	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
@@ -122,10 +122,37 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 	if len(ri) == 0 {
 		return true, nil
 	}
-	return this.checkAgainstBeforeRemoteInterceptor(data, appId, resourceId, action, ri)
+
+	condition := ri["condition"]
+
+	parser := jsonql.NewQuery(data)
+	conditionResult, err := parser.Query(condition)
+	if err != nil {
+		return false, err
+	}
+
+	switch v := conditionResult.(type) {
+	case []interface{}:
+		if len(v) == 0 {
+			return true, nil
+		}
+	case map[string]interface{}:
+		if v == nil {
+			return true, nil
+		}
+	default:
+		return false, nil
+	}
+
+	payload, err := this.createPayPload(resourceId, "before"+action, conditionResult)
+	if err != nil {
+		return false, err
+	}
+
+	return this.checkAgainstBeforeRemoteInterceptor(payload, appId, resourceId, action, ri)
 }
 
-func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[string]interface{}, action string, data string) error {
+func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[string]interface{}, action string, data interface{}) error {
 	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
@@ -134,7 +161,33 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 	if len(ri) == 0 {
 		return nil
 	}
-	return this.executeAfterRemoteInterceptor(data, appId, resourceId, action, ri)
+
+	condition := ri["condition"]
+
+	parser := jsonql.NewQuery(data)
+	conditionResult, err := parser.Query(condition)
+	if err != nil {
+		return err
+	}
+
+	switch v := conditionResult.(type) {
+	case []interface{}:
+		if len(v) == 0 {
+			return nil
+		}
+	case map[string]interface{}:
+		if v == nil {
+			return nil
+		}
+	default:
+		return nil
+	}
+
+	payload, err := this.createPayPload(resourceId, "after_"+action, conditionResult)
+	if err != nil {
+		return err
+	}
+	return this.executeAfterRemoteInterceptor(payload, appId, resourceId, action, ri)
 }
 
 func (this *GlobalRemoteInterceptor) createPayPload(target string, action string, data interface{}) (string, error) {
@@ -153,142 +206,62 @@ func (this *GlobalRemoteInterceptor) createPayPload(target string, action string
 }
 
 func (this *GlobalRemoteInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_create", data)
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "create", payload)
+	return this.commonBefore(resourceId, context, "create", data)
 }
 func (this *GlobalRemoteInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	payload, err := this.createPayPload(resourceId, "after_create", data)
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "create", payload)
+	return this.commonAfter(resourceId, context, "create", data)
 }
 func (this *GlobalRemoteInterceptor) BeforeLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, id string) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_load", map[string]string{"id": id})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "load", payload)
+	return this.commonBefore(resourceId, context, "load", map[string]string{"id": id})
 }
 func (this *GlobalRemoteInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
-	payload, err := this.createPayPload(resourceId, "after_load", data)
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "load", payload)
+	return this.commonAfter(resourceId, context, "load", data)
 }
 func (this *GlobalRemoteInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_update", data)
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "update", payload)
+	return this.commonBefore(resourceId, context, "update", data)
 }
 func (this *GlobalRemoteInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	payload, err := this.createPayPload(resourceId, "after_update", data)
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "update", payload)
+	return this.commonAfter(resourceId, context, "update", data)
 }
 func (this *GlobalRemoteInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_duplicate", map[string]string{"id": id})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "duplicate", payload)
+	return this.commonBefore(resourceId, context, "duplicate", map[string]string{"id": id})
 }
 func (this *GlobalRemoteInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
-	payload, err := this.createPayPload(resourceId, "after_update", map[string]string{"new_id": newId})
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "duplicate", payload)
+	return this.commonAfter(resourceId, context, "duplicate", map[string]string{"new_id": newId})
 }
 func (this *GlobalRemoteInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_delete", map[string]string{"id": id})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "delete", payload)
+	return this.commonBefore(resourceId, context, "delete", map[string]string{"id": id})
 }
 func (this *GlobalRemoteInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	payload, err := this.createPayPload(resourceId, "after_delete", map[string]string{"id": id})
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "delete", payload)
+	return this.commonAfter(resourceId, context, "delete", map[string]string{"id": id})
 }
 func (this *GlobalRemoteInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_list_map", map[string]string{"fields": fields, "filter": *filter, "sort": *sort, "group": *group, "start": start, "limit": limit})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "list_map", payload)
+	return this.commonBefore(resourceId, context, "list_map", map[string]interface{}{"fields": fields, "filter": *filter, "sort": *sort, "group": *group, "start": start, "limit": limit})
 }
 func (this *GlobalRemoteInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data *[]map[string]string, total int64) error {
-	payload, err := this.createPayPload(resourceId, "after_list_map", *data)
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "list_map", payload)
+	return this.commonAfter(resourceId, context, "list_map", *data)
 }
 func (this *GlobalRemoteInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_list_array", map[string]string{"fields": fields, "filter": *filter, "sort": *sort, "group": *group, "start": start, "limit": limit})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "list_array", payload)
+	return this.commonBefore(resourceId, context, "list_array", map[string]interface{}{"fields": fields, "filter": *filter, "sort": *sort, "group": *group, "start": start, "limit": limit})
 }
 func (this *GlobalRemoteInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers *[]string, data *[][]string, total int64) error {
-	payload, err := this.createPayPload(resourceId, "after_list_array", map[string]interface{}{"headers": *headers, "data": *data})
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "list_array", payload)
+	return this.commonAfter(resourceId, context, "list_array", map[string]interface{}{"headers": *headers, "data": *data})
 }
 func (this *GlobalRemoteInterceptor) BeforeQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_query_map", map[string]string{"params": *params})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "query_map", payload)
+	return this.commonBefore(resourceId, context, "query_map", map[string]interface{}{"params": *params})
 }
 func (this *GlobalRemoteInterceptor) AfterQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, data *[]map[string]string) error {
-	payload, err := this.createPayPload(resourceId, "after_query_map", *data)
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "query_map", payload)
+	return this.commonAfter(resourceId, context, "query_map", *data)
 }
 func (this *GlobalRemoteInterceptor) BeforeQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_query_array", map[string]string{"params": *params})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "query_array", payload)
+	return this.commonBefore(resourceId, context, "query_array", map[string]interface{}{"params": *params})
 }
 func (this *GlobalRemoteInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
-	payload, err := this.createPayPload(resourceId, "after_query_array", map[string]interface{}{"headers": *headers, "data": *data})
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "query_array", payload)
+	return this.commonAfter(resourceId, context, "query_array", map[string]interface{}{"headers": *headers, "data": *data})
 }
 func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
-	payload, err := this.createPayPload(resourceId, "before_exec", map[string]interface{}{"params": *params})
-	if err != nil {
-		return false, err
-	}
-	return this.commonBefore(resourceId, context, "exec", payload)
+	return this.commonBefore(resourceId, context, "exec", map[string]interface{}{"params": *params})
 }
 func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
-	payload, err := this.createPayPload(resourceId, "after_exec", map[string]interface{}{"rows_affected": rowsAffectedArray})
-	if err != nil {
-		return err
-	}
-	return this.commonAfter(resourceId, context, "exec", payload)
+	return this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray})
 }
