@@ -124,27 +124,29 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 	}
 
 	condition := ri["condition"]
+	if len(strings.TrimSpace(condition)) > 0 {
+		parser := jsonql.NewQuery(data)
+		conditionResult, err := parser.Query(condition)
+		if err != nil {
+			return true, err
+		}
 
-	parser := jsonql.NewQuery(data)
-	conditionResult, err := parser.Query(condition)
-	if err != nil {
-		return false, err
-	}
-
-	switch v := conditionResult.(type) {
-	case []interface{}:
-		if len(v) == 0 {
+		switch v := conditionResult.(type) {
+		case []interface{}:
+			if len(v) == 0 {
+				return true, nil
+			}
+		case map[string]interface{}:
+			if v == nil {
+				return true, nil
+			}
+		default:
 			return true, nil
 		}
-	case map[string]interface{}:
-		if v == nil {
-			return true, nil
-		}
-	default:
-		return false, nil
+		data = conditionResult
 	}
 
-	payload, err := this.createPayPload(resourceId, "before"+action, conditionResult)
+	payload, err := this.createPayPload(resourceId, "before"+action, data)
 	if err != nil {
 		return false, err
 	}
@@ -163,27 +165,28 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 	}
 
 	condition := ri["condition"]
+	if len(strings.TrimSpace(condition)) > 0 {
+		parser := jsonql.NewQuery(data)
+		conditionResult, err := parser.Query(condition)
+		if err != nil {
+			return err
+		}
 
-	parser := jsonql.NewQuery(data)
-	conditionResult, err := parser.Query(condition)
-	if err != nil {
-		return err
-	}
-
-	switch v := conditionResult.(type) {
-	case []interface{}:
-		if len(v) == 0 {
+		switch v := conditionResult.(type) {
+		case []interface{}:
+			if len(v) == 0 {
+				return nil
+			}
+		case map[string]interface{}:
+			if v == nil {
+				return nil
+			}
+		default:
 			return nil
 		}
-	case map[string]interface{}:
-		if v == nil {
-			return nil
-		}
-	default:
-		return nil
+		data = conditionResult
 	}
-
-	payload, err := this.createPayPload(resourceId, "after_"+action, conditionResult)
+	payload, err := this.createPayPload(resourceId, "after_"+action, data)
 	if err != nil {
 		return err
 	}
