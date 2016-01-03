@@ -42,11 +42,11 @@ func loadAllRemoteInterceptor() error {
 		target := riMap["TARGET"]
 		theType := riMap["TYPE"]
 		actionType := riMap["ACTION_TYPE"]
-		condition := riMap["CONDITION"]
+		criteria := riMap["CRITERIA"]
 		method := riMap["METHOD"]
 		url := riMap["URL"]
 		key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
-		pipe.HMSet(key, "method", method, "url", url, "condition", condition)
+		pipe.HMSet(key, "method", method, "url", url, "criteria", criteria)
 	}
 	_, err = pipe.Exec()
 	return err
@@ -73,9 +73,9 @@ func loadRemoteInterceptor(projectId, target, theType, actionType string) error 
 		url := riMap["URL"]
 		theType := riMap["TYPE"]
 		actionType := riMap["ACTION_TYPE"]
-		condition := riMap["CONDITION"]
+		criteria := riMap["CRITERIA"]
 		key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
-		redisMaster.HMSet(key, "method", method, "url", url, "condition", condition)
+		redisMaster.HMSet(key, "method", method, "url", url, "criteria", criteria)
 	}
 	return nil
 }
@@ -123,15 +123,15 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 		return true, nil
 	}
 
-	condition := ri["condition"]
-	if len(strings.TrimSpace(condition)) > 0 {
+	criteria := ri["criteria"]
+	if len(strings.TrimSpace(criteria)) > 0 {
 		parser := jsonql.NewQuery(data)
-		conditionResult, err := parser.Query(condition)
+		criteriaResult, err := parser.Query(criteria)
 		if err != nil {
 			return true, err
 		}
 
-		switch v := conditionResult.(type) {
+		switch v := criteriaResult.(type) {
 		case []interface{}:
 			if len(v) == 0 {
 				return true, nil
@@ -143,7 +143,7 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 		default:
 			return true, nil
 		}
-		data = conditionResult
+		data = criteriaResult
 	}
 
 	payload, err := this.createPayPload(resourceId, "before"+action, data)
@@ -164,15 +164,15 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 		return nil
 	}
 
-	condition := ri["condition"]
-	if len(strings.TrimSpace(condition)) > 0 {
+	criteria := ri["criteria"]
+	if len(strings.TrimSpace(criteria)) > 0 {
 		parser := jsonql.NewQuery(data)
-		conditionResult, err := parser.Query(condition)
+		criteriaResult, err := parser.Query(criteria)
 		if err != nil {
 			return err
 		}
 
-		switch v := conditionResult.(type) {
+		switch v := criteriaResult.(type) {
 		case []interface{}:
 			if len(v) == 0 {
 				return nil
@@ -184,7 +184,7 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 		default:
 			return nil
 		}
-		data = conditionResult
+		data = criteriaResult
 	}
 	payload, err := this.createPayPload(resourceId, "after_"+action, data)
 	if err != nil {

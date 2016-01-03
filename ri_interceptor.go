@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	//	"errors"
 	"fmt"
 	"github.com/elgs/gorest2"
