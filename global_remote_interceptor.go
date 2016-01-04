@@ -83,7 +83,7 @@ func loadRemoteInterceptor(projectId, target, theType, actionType string) error 
 func unloadRemoteInterceptor(projectId, target, theType, actionType string) error {
 	// unload specific remote interceptor definitions into RemoteInterceptorRegistry
 	key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
-	err := redisMaster.HDel(key).Err()
+	err := redisMaster.Del(key).Err()
 	return err
 }
 
