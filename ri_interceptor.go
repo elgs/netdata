@@ -45,7 +45,6 @@ func (this *RiInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context m
 }
 
 func (this *RiInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	fmt.Println("after update")
 	return this.commonAfterInterceptor(context, data)
 }
 
