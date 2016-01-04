@@ -18,10 +18,25 @@ type RiInterceptor struct {
 	Id string
 }
 
-func (this *RiInterceptor) commonAfterCreateOrUpdateToken(projectId, token string) error {
-	key := fmt.Sprint("token:", projectId, ":", token)
-	err := redisMaster.Del(key).Err()
-	return err
+func (this *RiInterceptor) commonAfterCreateOrUpdateToken(context map[string]interface{}, data map[string]interface{}) error {
+	if oldData, found := context["old_data"].(map[string]string); found {
+		projectId := oldData["PROJECT_ID"]
+		target := oldData["TARGET"]
+		theType := oldData["TYPE"]
+		actionType := oldData["ACTION_TYPE"]
+		err := unloadRemoteInterceptor(projectId, target, theType, actionType)
+		if err != nil {
+			return err
+		}
+	}
+	if data != nil {
+		return loadRemoteInterceptor(data["PROJECT_ID"].(string), data["TARGET"].(string), data["TYPE"].(string), data["ACTION_TYPE"].(string))
+	}
+	return nil
+}
+
+func (this *RiInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+	return this.commonAfterCreateOrUpdateToken(context, data)
 }
 
 func (this *RiInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
@@ -30,9 +45,7 @@ func (this *RiInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context m
 }
 
 func (this *RiInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	token := context["old_data"].(map[string]string)["TOKEN"]
-	projectId := context["old_data"].(map[string]string)["PROJECT_ID"]
-	return this.commonAfterCreateOrUpdateToken(projectId, token)
+	return this.commonAfterCreateOrUpdateToken(context, data)
 }
 
 func (this *RiInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
@@ -41,9 +54,7 @@ func (this *RiInterceptor) BeforeDelete(resourceId string, db *sql.DB, context m
 }
 
 func (this *RiInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	token := context["old_data"].(map[string]string)["TOKEN"]
-	projectId := context["old_data"].(map[string]string)["PROJECT_ID"]
-	return this.commonAfterCreateOrUpdateToken(projectId, token)
+	return this.commonAfterCreateOrUpdateToken(context, nil)
 }
 
 func (this *RiInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
