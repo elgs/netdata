@@ -47,7 +47,8 @@ var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
 var grConfig gorest2.Gorest
 var redisMaster *redis.Client
 var redisLocal *redis.Client
-var mainNode bool = false
+
+var pushNode bool = false
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -89,11 +90,14 @@ func main() {
 	gorest2.DboRegistry["default"] = dbo
 	gorest2.GetDbo = makeGetDbo(dbType)
 
-	mainNode = grConfig["main_node"].(bool)
-	if mainNode {
-		startJobs()
+	pushNode = grConfig["push_node"].(bool)
+	if pushNode {
 		redisMaster.FlushDb()
 		loadAllRemoteInterceptor()
+	}
+	jobNode := grConfig["job_node"].(bool)
+	if jobNode {
+		startJobs()
 	}
 
 	gorest2.RegisterHandler("/api", gorest2.RestFunc)
