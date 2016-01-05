@@ -112,6 +112,14 @@ func (this *GlobalTokenProjectInterceptor) BeforeCreate(resourceId string, db *s
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["CREATE_TIME"] = time.Now().UTC()
 			data["UPDATE_TIME"] = time.Now().UTC()
+			if userId, found := context["user_id"]; found {
+				data["CREATOR_ID"] = userId
+				data["UPDATER_ID"] = userId
+			}
+			if email, found := context["email"]; found {
+				data["CREATOR_CODE"] = email
+				data["UPDATER_CODE"] = email
+			}
 		}
 	}
 	return ctn, err
@@ -136,6 +144,12 @@ func (this *GlobalTokenProjectInterceptor) BeforeUpdate(resourceId string, db *s
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["UPDATE_TIME"] = time.Now().UTC()
+		}
+		if userId, found := context["user_id"]; found {
+			data["UPDATER_ID"] = userId
+		}
+		if email, found := context["email"]; found {
+			data["UPDATER_CODE"] = email
 		}
 	}
 	return ctn, err
