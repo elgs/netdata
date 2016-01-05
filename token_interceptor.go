@@ -19,7 +19,7 @@ type TokenInterceptor struct {
 
 func (this *TokenInterceptor) commonAfterCreateOrUpdateToken(projectId, token string) error {
 	key := fmt.Sprint("token:", projectId, ":", token)
-	err := redisMaster.Del(key).Err()
+	err := gorest2.RedisMaster.Del(key).Err()
 	return err
 }
 

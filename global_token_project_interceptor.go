@@ -50,7 +50,7 @@ func checkAccessPermission(targets, tableId, mode, op string) bool {
 
 func checkProjectToken(projectId string, token string, tableId string, op string) (bool, error) {
 	key := fmt.Sprint("token:", projectId, ":", token)
-	tokenMap := redisLocal.HGetAllMap(token).Val()
+	tokenMap := gorest2.RedisLocal.HGetAllMap(token).Val()
 
 	if projectId != "" && token != "" && len(tokenMap) > 0 {
 		if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
@@ -74,7 +74,7 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		err := redisMaster.HMSet(key, "targets", record["TARGETS"], "mode", record["MODE"]).Err()
+		err := gorest2.RedisMaster.HMSet(key, "targets", record["TARGETS"], "mode", record["MODE"]).Err()
 		if err != nil {
 			return false, err
 		}
@@ -93,7 +93,7 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 			return false, err
 		}
 		if userData != nil && len(userData) > 0 {
-			err := redisMaster.HMSet(key, "targets", "*", "mode", "rwx").Err()
+			err := gorest2.RedisMaster.HMSet(key, "targets", "*", "mode", "rwx").Err()
 			if err != nil {
 				return false, err
 			}

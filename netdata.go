@@ -45,8 +45,6 @@ var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
 }
 
 var grConfig gorest2.Gorest
-var redisMaster *redis.Client
-var redisLocal *redis.Client
 
 var pushNode bool = false
 
@@ -60,11 +58,11 @@ func main() {
 
 	redisMasterAddress := grConfig["redis_master_address"].(string)
 	redisMasterPassword := grConfig["redis_master_password"].(string)
-	redisMaster = redis.NewClient(&redis.Options{
+	gorest2.RedisMaster = redis.NewClient(&redis.Options{
 		Addr:     redisMasterAddress,
 		Password: redisMasterPassword,
 	})
-	_, err := redisMaster.Ping().Result()
+	_, err := gorest2.RedisMaster.Ping().Result()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -72,11 +70,11 @@ func main() {
 
 	redisLocalAddress := grConfig["redis_local_address"].(string)
 	redisLocalPassword := grConfig["redis_local_password"].(string)
-	redisLocal = redis.NewClient(&redis.Options{
+	gorest2.RedisLocal = redis.NewClient(&redis.Options{
 		Addr:     redisLocalAddress,
 		Password: redisLocalPassword,
 	})
-	_, err = redisLocal.Ping().Result()
+	_, err = gorest2.RedisLocal.Ping().Result()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -92,7 +90,7 @@ func main() {
 
 	pushNode = grConfig["push_node"].(bool)
 	if pushNode {
-		redisMaster.FlushDb()
+		gorest2.RedisMaster.FlushDb()
 		loadAllRemoteInterceptor()
 	}
 	jobNode := grConfig["job_node"].(bool)

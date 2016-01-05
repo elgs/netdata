@@ -29,7 +29,7 @@ func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string
 	}
 
 	key := fmt.Sprint("dtoken:", dToken)
-	dTokenMap := redisLocal.HGetAllMap(key).Val()
+	dTokenMap := gorest2.RedisLocal.HGetAllMap(key).Val()
 	if dToken != "" && len(dTokenMap) > 0 {
 		return true, dTokenMap, nil
 	}
@@ -48,7 +48,7 @@ func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		redisMaster.HMSet(key, "ID", record["ID"], "EMAIL", record["EMAIL"])
+		gorest2.RedisMaster.HMSet(key, "ID", record["ID"], "EMAIL", record["EMAIL"])
 		return true, record, nil
 	}
 	return false, nil, errors.New("Authentication failed.")

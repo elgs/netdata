@@ -26,7 +26,7 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 
 func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]string, error) {
 	key := fmt.Sprint("query:", projectId, ":", queryName)
-	queryMap := redisLocal.HGetAllMap(key).Val()
+	queryMap := gorest2.RedisLocal.HGetAllMap(key).Val()
 	if len(queryMap) > 0 {
 		return queryMap, nil
 	}
@@ -45,7 +45,7 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 		return nil, errors.New("Query not found.")
 	}
 
-	err = redisMaster.HMSet(key, "name", queryData[0]["NAME"], "script", queryData[0]["SCRIPT"]).Err()
+	err = gorest2.RedisMaster.HMSet(key, "name", queryData[0]["NAME"], "script", queryData[0]["SCRIPT"]).Err()
 	return queryData[0], nil
 }
 

@@ -24,7 +24,7 @@ type GlobalRemoteInterceptor struct {
 }
 
 func loadAllRemoteInterceptor() error {
-	pipe := redisMaster.Pipeline()
+	pipe := gorest2.RedisMaster.Pipeline()
 	defer pipe.Close()
 
 	// load all remote interceptor definitions into RemoteInterceptorRegistry
@@ -75,7 +75,7 @@ func loadRemoteInterceptor(projectId, target, theType, actionType string) error 
 		actionType := riMap["ACTION_TYPE"]
 		criteria := riMap["CRITERIA"]
 		key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
-		redisMaster.HMSet(key, "method", method, "url", url, "criteria", criteria)
+		gorest2.RedisMaster.HMSet(key, "method", method, "url", url, "criteria", criteria)
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func loadRemoteInterceptor(projectId, target, theType, actionType string) error 
 func unloadRemoteInterceptor(projectId, target, theType, actionType string) error {
 	// unload specific remote interceptor definitions into RemoteInterceptorRegistry
 	key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
-	err := redisMaster.Del(key).Err()
+	err := gorest2.RedisMaster.Del(key).Err()
 	return err
 }
 
@@ -118,7 +118,7 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
 	key := strings.Join([]string{"ri", appId, resourceId, "before", action}, ":")
-	ri := redisLocal.HGetAllMap(key).Val()
+	ri := gorest2.RedisLocal.HGetAllMap(key).Val()
 	if len(ri) == 0 {
 		return true, nil
 	}
@@ -159,7 +159,7 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
 	key := strings.Join([]string{"ri", appId, resourceId, "after", action}, ":")
-	ri := redisLocal.HGetAllMap(key).Val()
+	ri := gorest2.RedisLocal.HGetAllMap(key).Val()
 	if len(ri) == 0 {
 		return nil
 	}

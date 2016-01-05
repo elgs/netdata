@@ -21,7 +21,7 @@ func (this *QueryInterceptor) commonAfterCreateOrUpdateQuery(context map[string]
 	queryName := context["old_data"].(map[string]string)["NAME"]
 	appId := context["old_data"].(map[string]string)["PROJECT_ID"]
 	key := fmt.Sprint("query:", appId, ":", queryName)
-	return redisMaster.Del(key).Err()
+	return gorest2.RedisMaster.Del(key).Err()
 }
 
 func (this *QueryInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
