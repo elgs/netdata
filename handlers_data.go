@@ -116,7 +116,11 @@ func init() {
 		header := rawCSVdata[0]
 		data := make(map[string]interface{})
 		noID := false
+		noCraetorId := false
+		noCraetorCode := false
 		noCraeteTime := false
+		noUpdaterId := false
+		noUpdaterCode := false
 		noUpdateTime := false
 		for i, row := range rawCSVdata {
 			if i == 0 {
@@ -130,8 +134,20 @@ func init() {
 				if _, ok := data["ID"]; !ok {
 					noID = true
 				}
+				if _, ok := data["CREATOR_ID"]; !ok {
+					noCraetorId = true
+				}
+				if _, ok := data["CREATOR_CODE"]; !ok {
+					noCraetorCode = true
+				}
 				if _, ok := data["CREATE_TIME"]; !ok {
 					noCraeteTime = true
+				}
+				if _, ok := data["UPDATER_ID"]; !ok {
+					noUpdaterId = true
+				}
+				if _, ok := data["UPDATER_CODE"]; !ok {
+					noUpdaterCode = true
 				}
 				if _, ok := data["UPDATE_TIME"]; !ok {
 					noUpdateTime = true
@@ -140,8 +156,20 @@ func init() {
 			if noID {
 				data["ID"] = strings.Replace(uuid.NewV4().String(), "-", "", -1)
 			}
+			if noCraetorId {
+				data["CREATOR_ID"] = ""
+			}
+			if noCraetorCode {
+				data["CREATOR_CODE"] = ""
+			}
 			if noCraeteTime {
 				data["CREATE_TIME"] = time.Now().UTC()
+			}
+			if noUpdaterId {
+				data["UPDATER_ID"] = ""
+			}
+			if noUpdaterCode {
+				data["UPDATER_CODE"] = ""
 			}
 			if noUpdateTime {
 				data["UPDATE_TIME"] = time.Now().UTC()
