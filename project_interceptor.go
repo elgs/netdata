@@ -218,15 +218,27 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 	// clear cache
 	cacheQuery := gorest2.RedisLocal.Keys("query:" + id + ":*").Val()
 	err = gorest2.RedisMaster.Del(cacheQuery...).Err()
+	if err != nil {
+		fmt.Println()
+	}
 
 	cacheRi := gorest2.RedisLocal.Keys("ri:" + id + ":*").Val()
 	err = gorest2.RedisMaster.Del(cacheRi...).Err()
+	if err != nil {
+		fmt.Println()
+	}
 
 	cacheToken := gorest2.RedisLocal.Keys("token:" + id + ":*").Val()
 	err = gorest2.RedisMaster.Del(cacheToken...).Err()
+	if err != nil {
+		fmt.Println()
+	}
 
 	cacheUser := gorest2.RedisLocal.Keys("user:" + id + ":*").Val()
 	err = gorest2.RedisMaster.Del(cacheUser...).Err()
+	if err != nil {
+		fmt.Println()
+	}
 
 	return nil
 }
