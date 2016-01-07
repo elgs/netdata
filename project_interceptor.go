@@ -168,14 +168,18 @@ func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, cont
 	return true, nil
 }
 func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	// cleanup, user_project, db, db_user
+	// cleanup, user_project, query, db, db_user
 	_, err := gosqljson.ExecDb(db, `DELETE FROM user_project WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = gosqljson.ExecDb(db, `DELETE FROM query WHERE PROJECT_ID=?`, id)
 	if err != nil {
 		return err
 	}
 	projectKey := context["project_key"]
 	dataStoreName := context["data_store_name"]
-	fmt.Println(projectKey, dataStoreName)
 
 	// Drop database
 	query := `SELECT * FROM data_store WHERE DATA_STORE_NAME=?`
@@ -210,6 +214,19 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		fmt.Println(err)
 		return err
 	}
+
+	// clear cache
+	cacheQuery := gorest2.RedisLocal.Keys("query:" + id).Val()
+	err = gorest2.RedisMaster.Del(cacheQuery...).Err()
+
+	cacheRi := gorest2.RedisLocal.Keys("ri:" + id).Val()
+	err = gorest2.RedisMaster.Del(cacheRi...).Err()
+
+	cacheToken := gorest2.RedisLocal.Keys("token:" + id).Val()
+	err = gorest2.RedisMaster.Del(cacheToken...).Err()
+
+	cacheUser := gorest2.RedisLocal.Keys("user:" + id).Val()
+	err = gorest2.RedisMaster.Del(cacheUser...).Err()
 
 	return nil
 }
