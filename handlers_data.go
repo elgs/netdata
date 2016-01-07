@@ -184,7 +184,6 @@ func init() {
 	})
 
 	gorest2.RegisterHandler("/exec", func(w http.ResponseWriter, r *http.Request) {
-
 		projectId := r.Header.Get("app_id")
 		if projectId == "" {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")

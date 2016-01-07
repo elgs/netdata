@@ -236,7 +236,6 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 			}
 		}
 	}
-
 	totalCount := 0
 	for _, s := range scriptsArray {
 		sqlCheck(&s)
