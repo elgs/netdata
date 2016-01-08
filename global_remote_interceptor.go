@@ -146,7 +146,7 @@ func (this *GlobalRemoteInterceptor) commonBefore(resourceId string, context map
 		data = criteriaResult
 	}
 
-	payload, err := this.createPayPload(resourceId, "before"+action, data)
+	payload, err := this.createPayload(resourceId, "before"+action, data)
 	if err != nil {
 		return false, err
 	}
@@ -186,14 +186,14 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 		}
 		data = criteriaResult
 	}
-	payload, err := this.createPayPload(resourceId, "after_"+action, data)
+	payload, err := this.createPayload(resourceId, "after_"+action, data)
 	if err != nil {
 		return err
 	}
 	return this.executeAfterRemoteInterceptor(payload, appId, resourceId, action, ri)
 }
 
-func (this *GlobalRemoteInterceptor) createPayPload(target string, action string, data interface{}) (string, error) {
+func (this *GlobalRemoteInterceptor) createPayload(target string, action string, data interface{}) (string, error) {
 	rts := strings.Split(strings.Replace(target, "`", "", -1), ".")
 	target = rts[len(rts)-1]
 	m := map[string]interface{}{
