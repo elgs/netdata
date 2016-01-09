@@ -178,6 +178,12 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 	if err != nil {
 		return err
 	}
+
+	_, err = gosqljson.ExecDb(db, `DELETE FROM remote_interceptor WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		return err
+	}
+
 	projectKey := context["project_key"]
 	dataStoreName := context["data_store_name"]
 
