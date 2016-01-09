@@ -184,6 +184,25 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		return err
 	}
 
+	jobQuery := `SELECT ID FROM jobs WHERE PROJECT_ID=?`
+	jobData, err := gosqljson.QueryDbToMap(db, "", jobQuery, id)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	for _, job := range jobData {
+		jobId := job["ID"]
+		if jobRuntimeId, ok := jobStatus[jobId]; ok {
+			jobsCron.RemoveFunc(jobRuntimeId)
+			delete(jobStatus, id)
+		}
+	}
+
+	_, err = gosqljson.ExecDb(db, `DELETE FROM jobs WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		return err
+	}
+
 	projectKey := context["project_key"]
 	dataStoreName := context["data_store_name"]
 
