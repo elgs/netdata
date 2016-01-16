@@ -67,21 +67,25 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 
 	tx := context["tx"].(*sql.Tx)
 	userStats := map[string]interface{}{
-		"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
-		"PROJECT_ID":       projectId,
-		"PROJECT_KEY":      projectKey,
-		"STORAGE_USED":     0,
-		"STORAGE_TOTAL":    0,
-		"HTTP_WRITE_USED":  0,
-		"HTTP_WRITE_TOTAL": 0,
-		"HTTP_READ_USED":   0,
-		"HTTP_READ_TOTAL":  0,
-		"CREATOR_ID":       v["id"],
-		"CREATOR_CODE":     v["email"],
-		"CREATE_TIME":      time.Now().UTC(),
-		"UPDATER_ID":       v["id"],
-		"UPDATER_CODE":     v["email"],
-		"UPDATE_TIME":      time.Now().UTC(),
+		"ID":                 strings.Replace(uuid.NewV4().String(), "-", "", -1),
+		"PROJECT_ID":         projectId,
+		"PROJECT_KEY":        projectKey,
+		"STORAGE_USED":       0,
+		"STORAGE_TOTAL":      1 << 30, // 1G
+		"JOBS_USED":          0,
+		"JOBS_TOTAL":         1,
+		"INTERCEPTORS_USED":  0,
+		"INTERCEPTORS_TOTAL": 1,
+		"HTTP_WRITE_USED":    0,
+		"HTTP_WRITE_TOTAL":   50000,
+		"HTTP_READ_USED":     0,
+		"HTTP_READ_TOTAL":    500000,
+		"CREATOR_ID":         v["id"],
+		"CREATOR_CODE":       v["email"],
+		"CREATE_TIME":        time.Now().UTC(),
+		"UPDATER_ID":         v["id"],
+		"UPDATER_CODE":       v["email"],
+		"UPDATE_TIME":        time.Now().UTC(),
 	}
 
 	_, err := TxInsert(tx, "user_stats", userStats, true)
@@ -89,7 +93,12 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 		return err
 	}
 
-	err = gorest2.RedisMaster.HMSet("stats:"+projectId, "storage", "0", "http_write", "0", "http_read", "0").Err()
+	err = gorest2.RedisMaster.HMSet("stats:"+projectId,
+		"storage", "0",
+		"jobs", "0",
+		"interceptors", "0",
+		"http_write", "0",
+		"http_read", "0").Err()
 	if err != nil {
 		return err
 	}

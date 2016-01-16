@@ -34,6 +34,12 @@ func (this *JobInterceptor) AfterCreate(resourceId string, db *sql.DB, context m
 		return err
 	}
 	jobStatus[jobId] = jobRuntimeId
+	projectId := context["app_id"]
+	err = gorest2.RedisMaster.HIncrBy(fmt.Sprint("stats:", projectId), "jobs", 1).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	return nil
 }
 func (this *JobInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
@@ -67,6 +73,12 @@ func (this *JobInterceptor) AfterDelete(resourceId string, db *sql.DB, context m
 	if jobRuntimeId, ok := jobStatus[id]; ok {
 		jobsCron.RemoveFunc(jobRuntimeId)
 		delete(jobStatus, id)
+
+		projectId := context["app_id"]
+		err := gorest2.RedisMaster.HIncrBy(fmt.Sprint("stats:", projectId), "jobs", -1).Err()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 	return nil
 }

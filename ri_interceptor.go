@@ -36,6 +36,11 @@ func (this *RiInterceptor) commonAfterInterceptor(context map[string]interface{}
 }
 
 func (this *RiInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+	projectId := context["app_id"]
+	err := gorest2.RedisMaster.HIncrBy(fmt.Sprint("stats:", projectId), "interceptors", 1).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
 	return this.commonAfterInterceptor(context, data)
 }
 
@@ -54,6 +59,11 @@ func (this *RiInterceptor) BeforeDelete(resourceId string, db *sql.DB, context m
 }
 
 func (this *RiInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+	projectId := context["app_id"]
+	err := gorest2.RedisMaster.HIncrBy(fmt.Sprint("stats:", projectId), "interceptors", -1).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
 	return this.commonAfterInterceptor(context, nil)
 }
 
