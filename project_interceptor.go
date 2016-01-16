@@ -52,10 +52,40 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 	projectKey := data["PROJECT_KEY"].(string)
 	// Update members
 	members := strings.Split(data["MEMBERS"].(string), ",")
+	//	tx := context["tx"].(*sql.Tx)
+	//	_, err := gosqljson.ExecTx(tx, "DELETE FROM user_project WHERE PROJECT_ID=?", projectId)
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		return err
+	//	}
+
+	userToken := context["user_token"]
+	v, found := userToken.(map[string]string)
+	if !found {
+		return errors.New("User token not found in context.")
+	}
+
 	tx := context["tx"].(*sql.Tx)
-	_, err := gosqljson.ExecTx(tx, "DELETE FROM user_project WHERE PROJECT_ID=?", projectId)
+	userStats := map[string]interface{}{
+		"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
+		"PROJECT_ID":       projectId,
+		"PROJECT_KEY":      projectKey,
+		"STORAGE_USED":     0,
+		"STORAGE_TOTAL":    0,
+		"HTTP_WRITE_USED":  0,
+		"HTTP_WRITE_TOTAL": 0,
+		"HTTP_READ_USED":   0,
+		"HTTP_READ_TOTAL":  0,
+		"CREATOR_ID":       v["id"],
+		"CREATOR_CODE":     v["email"],
+		"CREATE_TIME":      time.Now().UTC(),
+		"UPDATER_ID":       v["id"],
+		"UPDATER_CODE":     v["email"],
+		"UPDATE_TIME":      time.Now().UTC(),
+	}
+
+	_, err := TxInsert(tx, "user_stats", userStats, true)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	for _, member := range members {
@@ -64,8 +94,6 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 			continue
 		}
 
-		userToken := context["user_token"]
-		v := userToken.(map[string]string)
 		memberData := map[string]interface{}{
 			"ID":           strings.Replace(uuid.NewV4().String(), "-", "", -1),
 			"USER_EMAIL":   member,
@@ -79,7 +107,7 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 			"UPDATER_CODE": v["email"],
 			"UPDATE_TIME":  time.Now().UTC(),
 		}
-		_, err = TxInsert(tx, "user_project", memberData)
+		_, err = TxInsert(tx, "user_project", memberData, false)
 		if err != nil {
 			fmt.Println(err)
 			return err

@@ -90,7 +90,7 @@ func main() {
 
 	pushNode = grConfig["push_node"].(bool)
 	if pushNode {
-		gorest2.RedisMaster.FlushDb()
+		//		gorest2.RedisMaster.FlushDb()
 		loadAllRemoteInterceptor()
 	}
 	jobNode := grConfig["job_node"].(bool)
