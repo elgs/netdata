@@ -201,7 +201,7 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		return err
 	}
 
-	jobQuery := `SELECT ID FROM jobs WHERE PROJECT_ID=?`
+	jobQuery := `SELECT ID FROM job WHERE PROJECT_ID=?`
 	jobData, err := gosqljson.QueryDbToMap(db, "", jobQuery, id)
 	if err != nil {
 		fmt.Println(err)
@@ -215,7 +215,7 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		}
 	}
 
-	_, err = gosqljson.ExecDb(db, `DELETE FROM jobs WHERE PROJECT_ID=?`, id)
+	_, err = gosqljson.ExecDb(db, `DELETE FROM job WHERE PROJECT_ID=?`, id)
 	if err != nil {
 		return err
 	}
