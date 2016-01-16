@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/elgs/gorest2"
@@ -116,14 +117,55 @@ func initCache() error {
 	if err != nil {
 		return err
 	}
-	_, err = loadStats("")
+	_, err = loadRequestStats("")
+	if err != nil {
+		return err
+	}
+	err = updateStorageStats()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func loadStats(projectId string) (int, error) {
+func updateStorageStats() error {
+	defaultDbo := gorest2.DboRegistry["default"]
+	db, err := defaultDbo.GetConn()
+	if err != nil {
+		return err
+	}
+	dataStoreArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM data_store")
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	for _, dataStore := range dataStoreArray {
+		ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/", dataStore["USERNAME"], dataStore["PASSWORD"],
+			dataStore["HOST"], dataStore["PORT"])
+		projectDb, err := sql.Open("mysql", ds)
+		defer projectDb.Close()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		_, data, err := gosqljson.QueryDbToArray(projectDb, "", `SELECT SUBSTRING(TABLE_SCHEMA FROM 4), SUM(DATA_LENGTH+INDEX_LENGTH)
+			FROM information_schema.tables WHERE TABLE_SCHEMA LIKE 'nd\_%' GROUP BY TABLE_SCHEMA;`)
+		if err != nil {
+			fmt.Println(err)
+			continue
+			projectKey := data[0]
+			storageUsed := data[1]
+			_, err := gosqljson.ExecDb(db,
+				`UPDATE user_stats SET STORAGE_USED=? WHERE PROJECT_KEY=?`, storageUsed, projectKey)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+	return nil
+}
+
+func loadRequestStats(projectId string) (int, error) {
 	if projectId == "" {
 		projectId = "%"
 	}

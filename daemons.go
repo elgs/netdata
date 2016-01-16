@@ -58,7 +58,7 @@ func init() {
 				if !jobNode {
 					return
 				}
-				_, err := loadStats("%")
+				_, err := loadRequestStats("")
 				if err != nil {
 					fmt.Println(err)
 					return

@@ -134,7 +134,7 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 
 func (this *ProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
 	projectId := data["ID"].(string)
-	_, err := loadStats(projectId)
+	_, err := loadRequestStats(projectId)
 	if err != nil {
 		return err
 	}
