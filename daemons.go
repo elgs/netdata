@@ -1,16 +1,12 @@
 package main
 
 import (
-	"strings"
-	//	"bytes"
-	//	"crypto/tls"
 	"fmt"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
-	//	"io/ioutil"
 	"github.com/satori/go.uuid"
 	"math/rand"
-	//	"net/http"
+	"strings"
 	"time"
 )
 
@@ -21,6 +17,106 @@ func init() {
 		Cron: "0 0 * * * *",
 		MakeAction: func(dbo gorest2.DataOperator) func() {
 			return func() {
+			}
+		},
+	})
+
+	gorest2.RegisterJob("user_stats", &gorest2.Job{
+		Cron: "0 * * * * *",
+		MakeAction: func(dbo gorest2.DataOperator) func() {
+			return func() {
+				if !jobNode {
+					return
+				}
+
+				db, err := dbo.GetConn()
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				projectArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM project WHERE STATUS=0")
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				for _, project := range projectArray {
+					projectId := project["ID"]
+					projectKey := project["PROJECT_KEY"]
+					val, err := gorest2.RedisMaster.HGetAllMap("stats:" + projectId).Result()
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					if val == nil || len(val) == 0 { // not found in cache
+						// insert ignore to user_stats
+						userStats := map[string]interface{}{
+							"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
+							"PROJECT_ID":       projectId,
+							"PROJECT_KEY":      projectKey,
+							"STORAGE_USED":     0,
+							"STORAGE_TOTAL":    1 << 30, // 1G
+							"HTTP_WRITE_USED":  0,
+							"HTTP_WRITE_TOTAL": 50000,
+							"HTTP_READ_USED":   0,
+							"HTTP_READ_TOTAL":  500000,
+							"CREATOR_ID":       "",
+							"CREATOR_CODE":     "",
+							"CREATE_TIME":      time.Now().UTC(),
+							"UPDATER_ID":       "",
+							"UPDATER_CODE":     "",
+							"UPDATE_TIME":      time.Now().UTC(),
+						}
+
+						_, err := DbInsert(db, "user_stats", userStats, true, false)
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+						// load back to cache
+						loadStats(projectId)
+					} else { // found in cache
+						// try to insert into user_stats
+						httpWirte := val["http_write"]
+						httpRead := val["http_read"]
+
+						rowsAffected, err := gosqljson.ExecDb(db, "UPDATE user_stats SET HTTP_WRITE_USED=?, HTTP_READ_USED=? WHERE PROJECT_ID=?", httpWirte, httpRead, projectId)
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+						if rowsAffected == 0 {
+							//user_stats not found
+							userStats := map[string]interface{}{
+								"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
+								"PROJECT_ID":       projectId,
+								"PROJECT_KEY":      projectKey,
+								"STORAGE_USED":     0,
+								"STORAGE_TOTAL":    1 << 30, // 1G
+								"HTTP_WRITE_USED":  httpWirte,
+								"HTTP_WRITE_TOTAL": 50000,
+								"HTTP_READ_USED":   httpRead,
+								"HTTP_READ_TOTAL":  500000,
+								"CREATOR_ID":       "",
+								"CREATOR_CODE":     "",
+								"CREATE_TIME":      time.Now().UTC(),
+								"UPDATER_ID":       "",
+								"UPDATER_CODE":     "",
+								"UPDATE_TIME":      time.Now().UTC(),
+							}
+							_, err = DbInsert(db, "user_stats", userStats, true, false)
+							if err != nil {
+								fmt.Println(err)
+								return
+							}
+						}
+					}
+					// remove orphans in users_stats
+					_, err = gosqljson.ExecDb(db, "DELETE FROM user_stats WHERE PROJECT_ID NOT IN (SELECT ID FROM PROJECT)")
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+				}
 			}
 		},
 	})

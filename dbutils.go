@@ -43,11 +43,14 @@ func GenerateConditions(conditions map[string]interface{}) (string, []interface{
 	return fields, values
 }
 
-func DbInsert(db *sql.DB, table string, data map[string]interface{}, ignore bool) (int64, error) {
+func DbInsert(db *sql.DB, table string, data map[string]interface{}, ignore bool, replace bool) (int64, error) {
 	fields, values := GenerateFields(data)
 	insert := "INSERT INTO "
 	if ignore {
 		insert = "INSERT IGNORE INTO "
+	}
+	if replace {
+		insert = "REPLACE INTO "
 	}
 	return gosqljson.ExecDb(db, insert+table+" SET "+fields, values...)
 }
@@ -60,11 +63,14 @@ func DbUpdate(db *sql.DB, table string, data map[string]interface{},
 	return gosqljson.ExecDb(db, "UPDATE "+table+" SET "+fields+" WHERE 1=1"+conditionFields, values...)
 }
 
-func TxInsert(tx *sql.Tx, table string, data map[string]interface{}, ignore bool) (int64, error) {
+func TxInsert(tx *sql.Tx, table string, data map[string]interface{}, ignore bool, replace bool) (int64, error) {
 	fields, values := GenerateFields(data)
 	insert := "INSERT INTO "
 	if ignore {
 		insert = "INSERT IGNORE INTO "
+	}
+	if replace {
+		insert = "REPLACE INTO "
 	}
 	return gosqljson.ExecTx(tx, insert+table+" SET "+fields, values...)
 }

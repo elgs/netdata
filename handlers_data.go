@@ -174,7 +174,7 @@ func init() {
 			if noUpdateTime {
 				data["UPDATE_TIME"] = time.Now().UTC()
 			}
-			_, err := DbInsert(db, table, data, false)
+			_, err := DbInsert(db, table, data, false, false)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

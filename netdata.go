@@ -47,6 +47,7 @@ var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
 var grConfig gorest2.Gorest
 
 var pushNode bool = false
+var jobNode bool = false
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -93,7 +94,7 @@ func main() {
 		//		gorest2.RedisMaster.FlushDb()
 		loadAllRemoteInterceptor()
 	}
-	jobNode := grConfig["job_node"].(bool)
+	jobNode = grConfig["job_node"].(bool)
 	if jobNode {
 		startJobs()
 	}
@@ -136,14 +137,10 @@ func loadStats(projectId string) (int, error) {
 	for i, userStats := range userStatsArray {
 		projectId := userStats["PROJECT_ID"]
 		storageUsed := userStats["STORAGE_USED"]
-		jobsUsed := userStats["JOBS_USED"]
-		interceptorsUsed := userStats["INTERCEPTOR_USED"]
 		httpWriteUsed := userStats["HTTP_WRITE_USED"]
 		httpReadUsed := userStats["HTTP_READ_USED"]
 		err = gorest2.RedisMaster.HMSet("stats:"+projectId,
 			"storage", storageUsed,
-			"jobs", jobsUsed,
-			"interceptors", interceptorsUsed,
 			"http_write", httpWriteUsed,
 			"http_read", httpReadUsed).Err()
 		if err != nil {
