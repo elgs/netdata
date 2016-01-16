@@ -174,6 +174,11 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		return err
 	}
 
+	_, err = gosqljson.ExecDb(db, `DELETE FROM users_stats WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		return err
+	}
+
 	_, err = gosqljson.ExecDb(db, `DELETE FROM query WHERE PROJECT_ID=?`, id)
 	if err != nil {
 		return err
@@ -261,6 +266,12 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 
 	cacheUser := gorest2.RedisLocal.Keys("user:" + id + ":*").Val()
 	err = gorest2.RedisMaster.Del(cacheUser...).Err()
+	if err != nil {
+		fmt.Println()
+	}
+
+	cacheStats := gorest2.RedisLocal.Keys("stats:" + id + ":*").Val()
+	err = gorest2.RedisMaster.Del(cacheStats...).Err()
 	if err != nil {
 		fmt.Println()
 	}
