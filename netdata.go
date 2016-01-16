@@ -113,15 +113,38 @@ func initCache() error {
 	if err != nil {
 		return err
 	}
-	err = loadStats()
+	_, err = loadStats("")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func loadStats() error {
-	return nil
+func loadStats(projectId string) (int, error) {
+	if projectId == "" {
+		projectId = "%"
+	}
+	defaultDbo := gorest2.DboRegistry["default"]
+	db, err := defaultDbo.GetConn()
+	if err != nil {
+		return 0, err
+	}
+	userStatsArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM user_stats WHERE PROJECT_ID LIKE ?", projectId)
+	if err != nil {
+		return 0, err
+	}
+	for i, userStats := range userStatsArray {
+		projectId := userStats["PROJECT_ID"]
+		storageUsed := userStats["STORAGE_USED"]
+		httpWriteUsed := userStats["HTTP_WRITE_USED"]
+		httpReadUsed := userStats["HTTP_READ_USED"]
+		err = gorest2.RedisMaster.HMSet("stats:"+projectId, "storage", storageUsed,
+			"http_write", httpWriteUsed, "http_read", httpReadUsed).Err()
+		if err != nil {
+			return i + 1, err
+		}
+	}
+	return len(userStatsArray), nil
 
 }
 
