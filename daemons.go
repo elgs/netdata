@@ -86,9 +86,10 @@ func init() {
 						rowsAffected, err := gosqljson.ExecDb(db, `UPDATE user_stats SET 
 							STORAGE_USED=?, STORAGE_TOTAL=?, 
 							HTTP_WRITE_USED=?,HTTP_WRITE_TOTAL=?, 
-							HTTP_READ_USED=?,HTTP_READ_TOTAL=? 
-							WHERE PROJECT_ID=?`,
-							storageUsed, storageTotal, httpWirteUsed, httpWirteTotal, httpReadUsed, httpReadTotal, projectId)
+							HTTP_READ_USED=?,HTTP_READ_TOTAL=?,
+							UPDATE_TIME=? WHERE PROJECT_ID=?`,
+							storageUsed, storageTotal, httpWirteUsed, httpWirteTotal, httpReadUsed, httpReadTotal,
+							time.Now().UTC(), projectId)
 						if err != nil {
 							fmt.Println(err)
 							return
