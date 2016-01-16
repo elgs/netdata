@@ -42,7 +42,7 @@ func init() {
 				for _, project := range projectArray {
 					projectId := project["ID"]
 					projectKey := project["PROJECT_KEY"]
-					val, err := gorest2.RedisMaster.HGetAllMap("stats:" + projectId).Result()
+					val, err := gorest2.RedisLocal.HGetAllMap("stats:" + projectId).Result()
 					if err != nil {
 						fmt.Println(err)
 						return
@@ -77,7 +77,7 @@ func init() {
 					} else { // found in cache
 						// update user_stats
 						storageUsed := val["storage_used"]
-						storageTotal := val["storage_total_total"]
+						storageTotal := val["storage_total"]
 						httpWirteUsed := val["http_write_used"]
 						httpWirteTotal := val["http_write_total"]
 						httpReadUsed := val["http_read_used"]
