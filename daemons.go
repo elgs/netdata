@@ -120,7 +120,7 @@ func init() {
 						}
 					}
 					// remove orphans in users_stats
-					_, err = gosqljson.ExecDb(db, "DELETE FROM user_stats WHERE PROJECT_ID NOT IN (SELECT ID FROM PROJECT)")
+					_, err = gosqljson.ExecDb(db, "DELETE FROM user_stats WHERE PROJECT_ID NOT IN (SELECT ID FROM project)")
 					if err != nil {
 						fmt.Println(err)
 						return
