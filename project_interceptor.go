@@ -186,7 +186,7 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		return err
 	}
 
-	_, err = gosqljson.ExecDb(db, `DELETE FROM users_stats WHERE PROJECT_ID=?`, id)
+	_, err = gosqljson.ExecDb(db, `DELETE FROM user_stats WHERE PROJECT_ID=?`, id)
 	if err != nil {
 		return err
 	}
