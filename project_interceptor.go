@@ -88,6 +88,12 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 	if err != nil {
 		return err
 	}
+
+	err = gorest2.RedisMaster.HMSet("stats:"+projectId, "storage", "0", "http_write", "0", "http_read", "0").Err()
+	if err != nil {
+		return err
+	}
+
 	for _, member := range members {
 		member = strings.TrimSpace(member)
 		if member == "" {

@@ -104,6 +104,27 @@ func main() {
 	grConfig.Serve()
 }
 
+func initCache() error {
+	err := gorest2.RedisMaster.FlushDb().Err()
+	if err != nil {
+		return err
+	}
+	err = loadAllRemoteInterceptor()
+	if err != nil {
+		return err
+	}
+	err = loadStats()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func loadStats() error {
+	return nil
+
+}
+
 func parseConfig(configFile string) gorest2.Gorest {
 	b, err := ioutil.ReadFile(configFile)
 	if err != nil {
