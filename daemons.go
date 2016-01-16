@@ -21,14 +21,43 @@ func init() {
 		},
 	})
 
-	gorest2.RegisterJob("user_stats", &gorest2.Job{
+	gorest2.RegisterJob("update_user_stats", &gorest2.Job{
+		Cron: fmt.Sprint(rand.Intn(60), " * * * * *"),
+		MakeAction: func(dbo gorest2.DataOperator) func() {
+			return func() {
+				db, err := dbo.GetConn()
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				for k, v := range gorest2.RequestReads {
+					_, err := gosqljson.ExecDb(db,
+						`UPDATE user_stats SET HTTP_READ_USED=HTTP_WRITE_USED+? WHERE PROJECT_ID=?`, v, k)
+					if err != nil {
+						fmt.Println(err)
+					}
+					gorest2.RequestReads[k] = 0
+				}
+				for k, v := range gorest2.RequestWrites {
+					_, err := gosqljson.ExecDb(db,
+						`UPDATE user_stats SET HTTP_READ_USED=HTTP_READ_USED+? WHERE PROJECT_ID=?`, v, k)
+					if err != nil {
+						fmt.Println(err)
+					}
+					gorest2.RequestWrites[k] = 0
+				}
+			}
+		},
+	})
+
+	gorest2.RegisterJob("load_user_stats_to_cache", &gorest2.Job{
 		Cron: "0 * * * * *",
 		MakeAction: func(dbo gorest2.DataOperator) func() {
 			return func() {
 				if !jobNode {
 					return
 				}
-
 				_, err := loadStats("%")
 				if err != nil {
 					fmt.Println(err)
