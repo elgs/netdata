@@ -102,6 +102,7 @@ func main() {
 		startJobs()
 		_, err = loadRequestStats("")
 		if err != nil {
+			fmt.Println(err)
 			return
 		}
 		err = updateStorageStats()
@@ -146,11 +147,13 @@ func updateStorageStats() error {
 		projectDb, err := sql.Open("mysql", ds)
 		defer projectDb.Close()
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		_, data, err := gosqljson.QueryDbToArray(projectDb, "", `SELECT SUBSTRING(TABLE_SCHEMA FROM 4), SUM(DATA_LENGTH+INDEX_LENGTH)
 			FROM information_schema.tables WHERE TABLE_SCHEMA LIKE 'nd\_%' GROUP BY TABLE_SCHEMA;`)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		for _, v := range data {
@@ -159,6 +162,7 @@ func updateStorageStats() error {
 			_, err = gosqljson.ExecDb(db,
 				`UPDATE user_stats SET STORAGE_USED=?,UPDATE_TIME=? WHERE PROJECT_KEY=?`, storageUsed, time.Now().UTC(), projectKey)
 			if err != nil {
+				fmt.Println(err)
 				continue
 			}
 		}
@@ -179,7 +183,6 @@ func loadRequestStats(projectId string) (int, error) {
 
 	projectArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM project WHERE STATUS=0 AND ID LIKE ?", projectId)
 	if err != nil {
-		fmt.Println(err)
 		return 0, err
 	}
 	for _, project := range projectArray {
@@ -208,14 +211,14 @@ func loadRequestStats(projectId string) (int, error) {
 		_, err := DbInsert(db, "user_stats", userStats, true, false)
 		if err != nil {
 			fmt.Println(err)
-			return 0, err
+			continue
 		}
 
 		// remove orphans in users_stats
 		_, err = gosqljson.ExecDb(db, "DELETE FROM user_stats WHERE PROJECT_ID NOT IN (SELECT ID FROM project)")
 		if err != nil {
 			fmt.Println(err)
-			return 0, err
+			continue
 		}
 	}
 
@@ -224,7 +227,7 @@ func loadRequestStats(projectId string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	for i, userStats := range userStatsArray {
+	for _, userStats := range userStatsArray {
 		projectId := userStats["PROJECT_ID"]
 		storageUsed := userStats["STORAGE_USED"]
 		storageTotal := userStats["STORAGE_TOTAL"]
@@ -240,7 +243,8 @@ func loadRequestStats(projectId string) (int, error) {
 			"http_read_used", httpReadUsed,
 			"http_read_total", httpReadTotal).Err()
 		if err != nil {
-			return i + 1, err
+			fmt.Println(err)
+			continue
 		}
 	}
 	return len(userStatsArray), nil
