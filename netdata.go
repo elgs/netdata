@@ -100,6 +100,10 @@ func main() {
 	jobNode = grConfig["job_node"].(bool)
 	if jobNode {
 		startJobs()
+		_, err = loadRequestStats("")
+		if err != nil {
+			return
+		}
 		err = updateStorageStats()
 		if err != nil {
 			fmt.Println(err)
@@ -122,13 +126,10 @@ func initCache() error {
 	if err != nil {
 		return err
 	}
-	_, err = loadRequestStats("")
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
+//update db
 func updateStorageStats() error {
 	defaultDbo := gorest2.DboRegistry["default"]
 	db, err := defaultDbo.GetConn()
@@ -137,7 +138,6 @@ func updateStorageStats() error {
 	}
 	dataStoreArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM data_store")
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	for _, dataStore := range dataStoreArray {
@@ -146,26 +146,25 @@ func updateStorageStats() error {
 		projectDb, err := sql.Open("mysql", ds)
 		defer projectDb.Close()
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 		_, data, err := gosqljson.QueryDbToArray(projectDb, "", `SELECT SUBSTRING(TABLE_SCHEMA FROM 4), SUM(DATA_LENGTH+INDEX_LENGTH)
 			FROM information_schema.tables WHERE TABLE_SCHEMA LIKE 'nd\_%' GROUP BY TABLE_SCHEMA;`)
 		if err != nil {
-			fmt.Println(err)
 			continue
-			projectKey := data[0]
-			storageUsed := data[1]
-			_, err := gosqljson.ExecDb(db,
-				`UPDATE user_stats SET STORAGE_USED=? WHERE PROJECT_KEY=?`, storageUsed, projectKey)
-			if err != nil {
-				fmt.Println(err)
-			}
+		}
+		projectKey := data[0]
+		storageUsed := data[1]
+		_, err = gosqljson.ExecDb(db,
+			`UPDATE user_stats SET STORAGE_USED=?,UPDATE_TIME=? WHERE PROJECT_KEY=?`, storageUsed, time.Now().UTC(), projectKey)
+		if err != nil {
+			continue
 		}
 	}
 	return nil
 }
 
+// update db and cache
 func loadRequestStats(projectId string) (int, error) {
 	if projectId == "" {
 		projectId = "%"

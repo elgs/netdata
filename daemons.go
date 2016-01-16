@@ -21,7 +21,8 @@ func init() {
 		},
 	})
 
-	gorest2.RegisterJob("update_user_stats", &gorest2.Job{
+	// api node -> db
+	gorest2.RegisterJob("update_user_request_stats", &gorest2.Job{
 		Cron: fmt.Sprint(rand.Intn(60), " * * * * *"),
 		MakeAction: func(dbo gorest2.DataOperator) func() {
 			return func() {
@@ -33,7 +34,8 @@ func init() {
 
 				for k, v := range gorest2.RequestReads {
 					_, err := gosqljson.ExecDb(db,
-						`UPDATE user_stats SET HTTP_READ_USED=HTTP_READ_USED+? WHERE PROJECT_ID=?`, v, k)
+						`UPDATE user_stats SET HTTP_READ_USED=HTTP_READ_USED+?,UPDATE_TIME=? WHERE PROJECT_ID=?`,
+						v, time.Now().UTC(), k)
 					if err != nil {
 						fmt.Println(err)
 					}
@@ -41,7 +43,8 @@ func init() {
 				}
 				for k, v := range gorest2.RequestWrites {
 					_, err := gosqljson.ExecDb(db,
-						`UPDATE user_stats SET HTTP_WRITE_USED=HTTP_WRITE_USED+? WHERE PROJECT_ID=?`, v, k)
+						`UPDATE user_stats SET HTTP_WRITE_USED=HTTP_WRITE_USED+?,UPDATE_TIME=? WHERE PROJECT_ID=?`,
+						v, time.Now().UTC(), k)
 					if err != nil {
 						fmt.Println(err)
 					}
@@ -51,6 +54,7 @@ func init() {
 		},
 	})
 
+	// update db and cache
 	gorest2.RegisterJob("load_user_stats_to_cache", &gorest2.Job{
 		Cron: "0 * * * * *",
 		MakeAction: func(dbo gorest2.DataOperator) func() {
@@ -59,6 +63,11 @@ func init() {
 					return
 				}
 				_, err := loadRequestStats("")
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				err = updateStorageStats()
 				if err != nil {
 					fmt.Println(err)
 					return
