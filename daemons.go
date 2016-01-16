@@ -33,7 +33,7 @@ func init() {
 
 				for k, v := range gorest2.RequestReads {
 					_, err := gosqljson.ExecDb(db,
-						`UPDATE user_stats SET HTTP_READ_USED=HTTP_WRITE_USED+? WHERE PROJECT_ID=?`, v, k)
+						`UPDATE user_stats SET HTTP_READ_USED=HTTP_READ_USED+? WHERE PROJECT_ID=?`, v, k)
 					if err != nil {
 						fmt.Println(err)
 					}
@@ -41,7 +41,7 @@ func init() {
 				}
 				for k, v := range gorest2.RequestWrites {
 					_, err := gosqljson.ExecDb(db,
-						`UPDATE user_stats SET HTTP_READ_USED=HTTP_READ_USED+? WHERE PROJECT_ID=?`, v, k)
+						`UPDATE user_stats SET HTTP_WRITE_USED=HTTP_WRITE_USED+? WHERE PROJECT_ID=?`, v, k)
 					if err != nil {
 						fmt.Println(err)
 					}
