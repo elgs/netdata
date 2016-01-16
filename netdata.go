@@ -153,12 +153,14 @@ func updateStorageStats() error {
 		if err != nil {
 			continue
 		}
-		projectKey := data[0]
-		storageUsed := data[1]
-		_, err = gosqljson.ExecDb(db,
-			`UPDATE user_stats SET STORAGE_USED=?,UPDATE_TIME=? WHERE PROJECT_KEY=?`, storageUsed, time.Now().UTC(), projectKey)
-		if err != nil {
-			continue
+		for _, v := range data {
+			projectKey := v[0]
+			storageUsed := v[1]
+			_, err = gosqljson.ExecDb(db,
+				`UPDATE user_stats SET STORAGE_USED=?,UPDATE_TIME=? WHERE PROJECT_KEY=?`, storageUsed, time.Now().UTC(), projectKey)
+			if err != nil {
+				continue
+			}
 		}
 	}
 	return nil
