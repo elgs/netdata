@@ -6,10 +6,13 @@ import (
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/satori/go.uuid"
 	"gopkg.in/redis.v3"
 	"io/ioutil"
 	"os"
 	"runtime"
+	"strings"
+	"time"
 )
 
 var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {
@@ -130,7 +133,51 @@ func loadStats(projectId string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	userStatsArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM user_stats WHERE PROJECT_ID LIKE ?", projectId)
+
+	projectArray, err := gosqljson.QueryDbToMap(db, "", "SELECT * FROM project WHERE STATUS=0 AND ID LIKE ?", projectId)
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+	for _, project := range projectArray {
+		projectId := project["ID"]
+		projectKey := project["PROJECT_KEY"]
+
+		// insert ignore into user_stats
+		userStats := map[string]interface{}{
+			"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
+			"PROJECT_ID":       projectId,
+			"PROJECT_KEY":      projectKey,
+			"STORAGE_USED":     0,
+			"STORAGE_TOTAL":    1 << 30, // 1G
+			"HTTP_WRITE_USED":  0,
+			"HTTP_WRITE_TOTAL": 50000,
+			"HTTP_READ_USED":   0,
+			"HTTP_READ_TOTAL":  500000,
+			"CREATOR_ID":       "",
+			"CREATOR_CODE":     "",
+			"CREATE_TIME":      time.Now().UTC(),
+			"UPDATER_ID":       "",
+			"UPDATER_CODE":     "",
+			"UPDATE_TIME":      time.Now().UTC(),
+		}
+
+		_, err := DbInsert(db, "user_stats", userStats, true, false)
+		if err != nil {
+			fmt.Println(err)
+			return 0, err
+		}
+
+		// remove orphans in users_stats
+		_, err = gosqljson.ExecDb(db, "DELETE FROM user_stats WHERE PROJECT_ID NOT IN (SELECT ID FROM project)")
+		if err != nil {
+			fmt.Println(err)
+			return 0, err
+		}
+	}
+
+	userStatsArray, err := gosqljson.QueryDbToMap(db, "", `SELECT * FROM user_stats 
+		WHERE PROJECT_ID IN (SELECT ID FROM project) AND PROJECT_ID LIKE ?`, projectId)
 	if err != nil {
 		return 0, err
 	}
