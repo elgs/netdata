@@ -75,11 +75,20 @@ func init() {
 						// load back to cache
 						loadStats(projectId)
 					} else { // found in cache
-						// try to insert into user_stats
-						httpWirte := val["http_write"]
-						httpRead := val["http_read"]
+						// update user_stats
+						storageUsed := val["storage_used"]
+						storageTotal := val["storage_total_total"]
+						httpWirteUsed := val["http_write_used"]
+						httpWirteTotal := val["http_write_total"]
+						httpReadUsed := val["http_read_used"]
+						httpReadTotal := val["http_read_total"]
 
-						rowsAffected, err := gosqljson.ExecDb(db, "UPDATE user_stats SET HTTP_WRITE_USED=?, HTTP_READ_USED=? WHERE PROJECT_ID=?", httpWirte, httpRead, projectId)
+						rowsAffected, err := gosqljson.ExecDb(db, `UPDATE user_stats SET 
+							STORAGE_USED=?, STORAGE_TOTAL=?, 
+							HTTP_WRITE_USED=?,HTTP_WRITE_TOTAL=?, 
+							HTTP_READ_USED=?,HTTP_READ_TOTAL=? 
+							WHERE PROJECT_ID=?`,
+							storageUsed, storageTotal, httpWirteUsed, httpWirteTotal, httpReadUsed, httpReadTotal, projectId)
 						if err != nil {
 							fmt.Println(err)
 							return
@@ -90,12 +99,12 @@ func init() {
 								"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
 								"PROJECT_ID":       projectId,
 								"PROJECT_KEY":      projectKey,
-								"STORAGE_USED":     0,
-								"STORAGE_TOTAL":    1 << 30, // 1G
-								"HTTP_WRITE_USED":  httpWirte,
-								"HTTP_WRITE_TOTAL": 50000,
-								"HTTP_READ_USED":   httpRead,
-								"HTTP_READ_TOTAL":  500000,
+								"STORAGE_USED":     storageUsed,
+								"STORAGE_TOTAL":    storageTotal,
+								"HTTP_WRITE_USED":  httpWirteUsed,
+								"HTTP_WRITE_TOTAL": httpWirteTotal,
+								"HTTP_READ_USED":   httpReadUsed,
+								"HTTP_READ_TOTAL":  httpReadTotal,
 								"CREATOR_ID":       "",
 								"CREATOR_CODE":     "",
 								"CREATE_TIME":      time.Now().UTC(),
@@ -103,7 +112,7 @@ func init() {
 								"UPDATER_CODE":     "",
 								"UPDATE_TIME":      time.Now().UTC(),
 							}
-							_, err = DbInsert(db, "user_stats", userStats, true, false)
+							_, err = DbInsert(db, "user_stats", userStats, false, false)
 							if err != nil {
 								fmt.Println(err)
 								return

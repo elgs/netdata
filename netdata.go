@@ -137,12 +137,18 @@ func loadStats(projectId string) (int, error) {
 	for i, userStats := range userStatsArray {
 		projectId := userStats["PROJECT_ID"]
 		storageUsed := userStats["STORAGE_USED"]
+		storageTotal := userStats["STORAGE_TOTAL"]
 		httpWriteUsed := userStats["HTTP_WRITE_USED"]
+		httpWriteTotal := userStats["HTTP_WRITE_TOTAL"]
 		httpReadUsed := userStats["HTTP_READ_USED"]
+		httpReadTotal := userStats["HTTP_READ_TOTAL"]
 		err = gorest2.RedisMaster.HMSet("stats:"+projectId,
-			"storage", storageUsed,
-			"http_write", httpWriteUsed,
-			"http_read", httpReadUsed).Err()
+			"storage_used", storageUsed,
+			"storage_total", storageTotal,
+			"http_write_used", httpWriteUsed,
+			"http_write_total", httpWriteTotal,
+			"http_read_used", httpReadUsed,
+			"http_read_total", httpReadTotal).Err()
 		if err != nil {
 			return i + 1, err
 		}
