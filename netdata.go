@@ -94,8 +94,7 @@ func main() {
 
 	pushNode = grConfig["push_node"].(bool)
 	if pushNode {
-		//		gorest2.RedisMaster.FlushDb()
-		loadAllRemoteInterceptor()
+		initCache()
 	}
 	jobNode = grConfig["job_node"].(bool)
 	if jobNode {
@@ -109,11 +108,11 @@ func main() {
 }
 
 func initCache() error {
-	err := gorest2.RedisMaster.FlushDb().Err()
-	if err != nil {
-		return err
-	}
-	err = loadAllRemoteInterceptor()
+	//	err := gorest2.RedisMaster.FlushDb().Err()
+	//	if err != nil {
+	//		return err
+	//	}
+	err := loadAllRemoteInterceptor()
 	if err != nil {
 		return err
 	}
