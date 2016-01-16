@@ -100,6 +100,11 @@ func main() {
 	jobNode = grConfig["job_node"].(bool)
 	if jobNode {
 		startJobs()
+		err = updateStorageStats()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	gorest2.RegisterHandler("/api", gorest2.RestFunc)
@@ -118,10 +123,6 @@ func initCache() error {
 		return err
 	}
 	_, err = loadRequestStats("")
-	if err != nil {
-		return err
-	}
-	err = updateStorageStats()
 	if err != nil {
 		return err
 	}
