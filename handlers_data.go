@@ -65,6 +65,16 @@ func init() {
 			fmt.Fprint(w, `{"err":"Invalid app."}`)
 			return
 		}
+
+		if projectId == "default" {
+			token := r.Header.Get("token")
+			if !isDevToken(token) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				fmt.Fprint(w, `{"err":"Access denied."}`)
+				return
+			}
+		}
+
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
@@ -93,6 +103,16 @@ func init() {
 			fmt.Fprint(w, `{"err":"Invalid app."}`)
 			return
 		}
+
+		if projectId == "default" {
+			token := r.Header.Get("token")
+			if !isDevToken(token) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				fmt.Fprint(w, `{"err":"Access denied."}`)
+				return
+			}
+		}
+
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
@@ -190,6 +210,16 @@ func init() {
 			fmt.Fprint(w, `{"err":"Invalid app."}`)
 			return
 		}
+
+		if projectId == "default" {
+			token := r.Header.Get("token")
+			if !isDevToken(token) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				fmt.Fprint(w, `{"err":"Access denied."}`)
+				return
+			}
+		}
+
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
@@ -207,6 +237,15 @@ func init() {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			fmt.Fprint(w, `{"err":"Invalid sql."}`)
 			return
+		}
+
+		if projectId == "default" {
+			token := r.Header.Get("token")
+			if !isDevToken(token) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				fmt.Fprint(w, `{"err":"Access denied."}`)
+				return
+			}
 		}
 
 		ms := make([]map[string]interface{}, 0, len(sqls))
@@ -275,6 +314,14 @@ func init() {
 			fmt.Fprint(w, `{"err":"Invalid app."}`)
 			return
 		}
+		if projectId == "default" {
+			token := r.Header.Get("token")
+			if !isDevToken(token) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				fmt.Fprint(w, `{"err":"Access denied."}`)
+				return
+			}
+		}
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {
@@ -330,7 +377,11 @@ func init() {
 		}
 		if projectId == "default" {
 			token := r.Header.Get("token")
-			fmt.Println(token)
+			if !isDevToken(token) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				fmt.Fprint(w, `{"err":"Access denied."}`)
+				return
+			}
 		}
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
@@ -540,4 +591,16 @@ func exec(tx *sql.Tx, sql string) (int64, error) {
 		return 0, err
 	}
 	return rowsAffected, nil
+}
+
+func isDevToken(token string) bool {
+	key := fmt.Sprint("dtoken:", token)
+	roles := gorest2.RedisLocal.HGet(key, "ROLES").Val()
+	roleArray := strings.Split(roles, ",")
+	for _, role := range roleArray {
+		if role == "dev" {
+			return true
+		}
+	}
+	return false
 }
