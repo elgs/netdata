@@ -180,13 +180,8 @@ func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, cont
 	return true, nil
 }
 func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
-	// cleanup, user_project, query, db, db_user
-	_, err := gosqljson.ExecDb(db, `DELETE FROM user_project WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		return err
-	}
-
-	_, err = gosqljson.ExecDb(db, `DELETE FROM user_stats WHERE PROJECT_ID=?`, id)
+	// cleanup, user_project, query, db, db_user, token
+	_, err := gosqljson.ExecDb(db, `DELETE FROM user_stats WHERE PROJECT_ID=?`, id)
 	if err != nil {
 		return err
 	}
@@ -197,6 +192,11 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 	}
 
 	_, err = gosqljson.ExecDb(db, `DELETE FROM remote_interceptor WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = gosqljson.ExecDb(db, `DELETE FROM token WHERE PROJECT_ID=?`, id)
 	if err != nil {
 		return err
 	}
@@ -286,6 +286,12 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 	err = gorest2.RedisMaster.Del(cacheStats...).Err()
 	if err != nil {
 		fmt.Println()
+	}
+
+	_, err = gosqljson.ExecDb(db, `DELETE FROM user_project WHERE PROJECT_ID=?`, id)
+	if err != nil {
+		fmt.Println(err)
+		return err
 	}
 
 	return nil
