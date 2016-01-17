@@ -328,6 +328,10 @@ func init() {
 			fmt.Fprint(w, `{"err":"Invalid app."}`)
 			return
 		}
+		if projectId == "default" {
+			token := r.Header.Get("token")
+			fmt.Println(token)
+		}
 		dbo := gorest2.GetDbo(projectId)
 		db, err := dbo.GetConn()
 		if err != nil {

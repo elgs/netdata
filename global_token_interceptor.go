@@ -40,7 +40,8 @@ func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string
 		fmt.Println(err)
 		return false, nil, err
 	}
-	userQuery := `SELECT user.* FROM user WHERE user.TOKEN_KEY=? AND user.STATUS=?`
+	userQuery := `SELECT user.*,GROUP_CONCAT(user_role.ROLE_NAME) AS roles FROM user 
+		LEFT OUTER JOIN user_role ON user.EMAIL=user_role.USER_EMAIL WHERE user.TOKEN_KEY=? AND user.STATUS=?`
 	userData, err := gosqljson.QueryDbToMap(defaultDb, "upper", userQuery, dToken, "0")
 	if err != nil {
 		fmt.Println(err)
@@ -48,7 +49,7 @@ func checkDefaultToken(dToken string, resouceId string) (bool, map[string]string
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		gorest2.RedisMaster.HMSet(key, "ID", record["ID"], "EMAIL", record["EMAIL"])
+		gorest2.RedisMaster.HMSet(key, "ID", record["ID"], "EMAIL", record["EMAIL"], "ROLES", record["roles"])
 		return true, record, nil
 	}
 	return false, nil, errors.New("Authentication failed.")

@@ -282,8 +282,7 @@ func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, conte
 		fmt.Println()
 	}
 
-	cacheStats := gorest2.RedisLocal.Keys("stats:" + id + ":*").Val()
-	err = gorest2.RedisMaster.Del(cacheStats...).Err()
+	err = gorest2.RedisMaster.Del("stats:" + id).Err()
 	if err != nil {
 		fmt.Println()
 	}

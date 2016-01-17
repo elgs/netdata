@@ -195,11 +195,11 @@ func loadRequestStats(projectId string) (int, error) {
 			"PROJECT_ID":       projectId,
 			"PROJECT_KEY":      projectKey,
 			"STORAGE_USED":     0,
-			"STORAGE_TOTAL":    1 << 30, // 1G
+			"STORAGE_TOTAL":    (1 << 30) * 10, // 10G
 			"HTTP_WRITE_USED":  0,
-			"HTTP_WRITE_TOTAL": 50000,
+			"HTTP_WRITE_TOTAL": 10000000,
 			"HTTP_READ_USED":   0,
-			"HTTP_READ_TOTAL":  500000,
+			"HTTP_READ_TOTAL":  50000000,
 			"CREATOR_ID":       "",
 			"CREATOR_CODE":     "",
 			"CREATE_TIME":      time.Now().UTC(),
