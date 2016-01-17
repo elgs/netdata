@@ -70,7 +70,7 @@ func init() {
 			token := r.Header.Get("token")
 			if !isDevToken(token) {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				fmt.Fprint(w, `{"err":"Access denied."}`)
+				http.Error(w, `{"err":"Access denied."}`, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -108,7 +108,7 @@ func init() {
 			token := r.Header.Get("token")
 			if !isDevToken(token) {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				fmt.Fprint(w, `{"err":"Access denied."}`)
+				http.Error(w, `{"err":"Access denied."}`, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -215,7 +215,7 @@ func init() {
 			token := r.Header.Get("token")
 			if !isDevToken(token) {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				fmt.Fprint(w, `{"err":"Access denied."}`)
+				http.Error(w, `{"err":"Access denied."}`, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -243,7 +243,7 @@ func init() {
 			token := r.Header.Get("token")
 			if !isDevToken(token) {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				fmt.Fprint(w, `{"err":"Access denied."}`)
+				http.Error(w, `{"err":"Access denied."}`, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -318,7 +318,7 @@ func init() {
 			token := r.Header.Get("token")
 			if !isDevToken(token) {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				fmt.Fprint(w, `{"err":"Access denied."}`)
+				http.Error(w, `{"err":"Access denied."}`, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -379,7 +379,7 @@ func init() {
 			token := r.Header.Get("token")
 			if !isDevToken(token) {
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				fmt.Fprint(w, `{"err":"Access denied."}`)
+				http.Error(w, `{"err":"Access denied."}`, http.StatusInternalServerError)
 				return
 			}
 		}

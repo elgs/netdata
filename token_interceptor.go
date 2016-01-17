@@ -46,13 +46,13 @@ func (this *TokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context
 }
 
 func (this *TokenInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
-	return filterTokens(context, filter)
+	return this.filterTokens(context, filter)
 }
 func (this *TokenInterceptor) BeforeListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
-	return filterTokens(context, filter)
+	return this.filterTokens(context, filter)
 }
 
-func filterTokens(context map[string]interface{}, filter *string) (bool, error) {
+func (this *TokenInterceptor) filterTokens(context map[string]interface{}, filter *string) (bool, error) {
 	userToken := context["user_token"]
 	if v, ok := userToken.(map[string]string); ok {
 		userId := v["ID"]
