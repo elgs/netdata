@@ -191,21 +191,20 @@ func loadRequestStats(projectId string) (int, error) {
 
 		// insert ignore into user_stats
 		userStats := map[string]interface{}{
-			"ID":               strings.Replace(uuid.NewV4().String(), "-", "", -1),
-			"PROJECT_ID":       projectId,
-			"PROJECT_KEY":      projectKey,
-			"STORAGE_USED":     0,
-			"STORAGE_TOTAL":    (1 << 30) * 10, // 10G
-			"HTTP_WRITE_USED":  0,
-			"HTTP_WRITE_TOTAL": 10000000,
-			"HTTP_READ_USED":   0,
-			"HTTP_READ_TOTAL":  50000000,
-			"CREATOR_ID":       "",
-			"CREATOR_CODE":     "",
-			"CREATE_TIME":      time.Now().UTC(),
-			"UPDATER_ID":       "",
-			"UPDATER_CODE":     "",
-			"UPDATE_TIME":      time.Now().UTC(),
+			"ID":                 strings.Replace(uuid.NewV4().String(), "-", "", -1),
+			"PROJECT_ID":         projectId,
+			"PROJECT_KEY":        projectKey,
+			"STORAGE_USED":       0,
+			"STORAGE_TOTAL":      (1 << 30) * 10, // 10G
+			"HTTP_WRITE_USED":    0,
+			"HTTP_READ_USED":     0,
+			"HTTP_REQUEST_TOTAL": 10000000,
+			"CREATOR_ID":         "",
+			"CREATOR_CODE":       "",
+			"CREATE_TIME":        time.Now().UTC(),
+			"UPDATER_ID":         "",
+			"UPDATER_CODE":       "",
+			"UPDATE_TIME":        time.Now().UTC(),
 		}
 
 		_, err := DbInsert(db, "user_stats", userStats, true, false)
@@ -232,16 +231,14 @@ func loadRequestStats(projectId string) (int, error) {
 		storageUsed := userStats["STORAGE_USED"]
 		storageTotal := userStats["STORAGE_TOTAL"]
 		httpWriteUsed := userStats["HTTP_WRITE_USED"]
-		httpWriteTotal := userStats["HTTP_WRITE_TOTAL"]
 		httpReadUsed := userStats["HTTP_READ_USED"]
-		httpReadTotal := userStats["HTTP_READ_TOTAL"]
+		httpRequestTotal := userStats["HTTP_REQUEST_TOTAL"]
 		err = gorest2.RedisMaster.HMSet("stats:"+projectId,
 			"storage_used", storageUsed,
 			"storage_total", storageTotal,
 			"http_write_used", httpWriteUsed,
-			"http_write_total", httpWriteTotal,
 			"http_read_used", httpReadUsed,
-			"http_read_total", httpReadTotal).Err()
+			"http_request_total", httpRequestTotal).Err()
 		if err != nil {
 			fmt.Println(err)
 			continue
