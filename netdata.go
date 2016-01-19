@@ -188,12 +188,14 @@ func loadRequestStats(projectId string) (int, error) {
 	for _, project := range projectArray {
 		projectId := project["ID"]
 		projectKey := project["PROJECT_KEY"]
+		projectName := project["NAME"]
 
 		// insert ignore into user_stats
 		userStats := map[string]interface{}{
 			"ID":                 strings.Replace(uuid.NewV4().String(), "-", "", -1),
 			"PROJECT_ID":         projectId,
 			"PROJECT_KEY":        projectKey,
+			"PROJECT_NAME":       projectName,
 			"STORAGE_USED":       0,
 			"STORAGE_TOTAL":      (1 << 30) * 10, // 10G
 			"HTTP_WRITE_USED":    0,
@@ -215,6 +217,14 @@ func loadRequestStats(projectId string) (int, error) {
 
 		// remove orphans in users_stats
 		_, err = gosqljson.ExecDb(db, "DELETE FROM user_stats WHERE PROJECT_ID NOT IN (SELECT ID FROM project)")
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		// update project name
+		_, err = gosqljson.ExecDb(db, `UPDATE user_stats,project SET user_stats.PROJECT_NAME=project.NAME 
+			WHERE user_stats.PROJECT_ID=project.ID`)
 		if err != nil {
 			fmt.Println(err)
 			continue
