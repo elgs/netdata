@@ -192,21 +192,21 @@ func loadRequestStats(projectId string) (int, error) {
 
 		// insert ignore into user_stats
 		userStats := map[string]interface{}{
-			"ID":                 strings.Replace(uuid.NewV4().String(), "-", "", -1),
-			"PROJECT_ID":         projectId,
-			"PROJECT_KEY":        projectKey,
-			"PROJECT_NAME":       projectName,
-			"STORAGE_USED":       0,
-			"STORAGE_TOTAL":      (1 << 30) * 10, // 10G
-			"HTTP_WRITE_USED":    0,
-			"HTTP_READ_USED":     0,
-			"HTTP_REQUEST_TOTAL": 10000000,
-			"CREATOR_ID":         "",
-			"CREATOR_CODE":       "",
-			"CREATE_TIME":        time.Now().UTC(),
-			"UPDATER_ID":         "",
-			"UPDATER_CODE":       "",
-			"UPDATE_TIME":        time.Now().UTC(),
+			"ID":                  strings.Replace(uuid.NewV4().String(), "-", "", -1),
+			"PROJECT_ID":          projectId,
+			"PROJECT_KEY":         projectKey,
+			"PROJECT_NAME":        projectName,
+			"STORAGE_USED":        0,
+			"STORAGE_TOTAL":       (1 << 30) * 10, // 10G
+			"HTTP_WRITE_USED":     0,
+			"HTTP_READ_USED":      0,
+			"HTTP_REQUESTS_TOTAL": 10000000,
+			"CREATOR_ID":          "",
+			"CREATOR_CODE":        "",
+			"CREATE_TIME":         time.Now().UTC(),
+			"UPDATER_ID":          "",
+			"UPDATER_CODE":        "",
+			"UPDATE_TIME":         time.Now().UTC(),
 		}
 
 		_, err := DbInsert(db, "user_stats", userStats, true, false)
@@ -242,13 +242,13 @@ func loadRequestStats(projectId string) (int, error) {
 		storageTotal := userStats["STORAGE_TOTAL"]
 		httpWriteUsed := userStats["HTTP_WRITE_USED"]
 		httpReadUsed := userStats["HTTP_READ_USED"]
-		httpRequestTotal := userStats["HTTP_REQUEST_TOTAL"]
+		httpRequestsTotal := userStats["HTTP_REQUESTS_TOTAL"]
 		err = gorest2.RedisMaster.HMSet("stats:"+projectId,
 			"storage_used", storageUsed,
 			"storage_total", storageTotal,
 			"http_write_used", httpWriteUsed,
 			"http_read_used", httpReadUsed,
-			"http_request_total", httpRequestTotal).Err()
+			"http_requests_total", httpRequestsTotal).Err()
 		if err != nil {
 			fmt.Println(err)
 			continue
