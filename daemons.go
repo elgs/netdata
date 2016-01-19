@@ -65,12 +65,18 @@ func init() {
 				_, err := loadRequestStats("")
 				if err != nil {
 					fmt.Println(err)
-					return
 				}
 				err = updateStorageStats()
 				if err != nil {
 					fmt.Println(err)
-					return
+				}
+				err = updateJobStats()
+				if err != nil {
+					fmt.Println(err)
+				}
+				err = updateRIStats()
+				if err != nil {
+					fmt.Println(err)
 				}
 			}
 		},
