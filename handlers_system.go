@@ -69,6 +69,7 @@ func GetNearestServer(ipStr string) string {
 	if len(record.Subdivisions) > 0 {
 		state = record.Subdivisions[0].Names["en"]
 	}
+	fmt.Println(strings.Join(city, state, countryCode, continent, ","))
 
 	dbo := gorest2.DboRegistry["default"]
 	defaultDb, err := dbo.GetConn()
@@ -80,6 +81,7 @@ func GetNearestServer(ipStr string) string {
 	if err != nil || len(serverData) == 0 {
 		return ret
 	}
+	fmt.Println(serverData)
 	if len(serverData) == 1 {
 		server := serverData[0]
 		ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
