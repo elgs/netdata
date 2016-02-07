@@ -69,7 +69,7 @@ func GetNearestServer(ipStr string) string {
 	if len(record.Subdivisions) > 0 {
 		state = record.Subdivisions[0].Names["en"]
 	}
-	fmt.Println(strings.Join(city, state, countryCode, continent, ","))
+	fmt.Println(strings.Join([]string{city, state, countryCode, continent}, ","))
 
 	dbo := gorest2.DboRegistry["default"]
 	defaultDb, err := dbo.GetConn()
