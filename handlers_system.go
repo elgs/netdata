@@ -77,7 +77,8 @@ func GetNearestServer(ipStr string) string {
 		return ret
 	}
 	serverData, err := gosqljson.QueryDbToMap(defaultDb, "",
-		`SELECT SERVER_NAME, SERVER_PORT, REGION, COUNTRY FROM server WHERE STATUS='0' AND SUPER_REGION=?`, continent)
+		`SELECT SERVER_NAME, SERVER_PORT, REGION, COUNTRY FROM server WHERE STATUS='0' AND (COUNTRY=? OR SUPER_REGION=?)`,
+		countryCode, continent)
 	if err != nil || len(serverData) == 0 {
 		return ret
 	}
