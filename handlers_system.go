@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -77,7 +78,8 @@ func GetNearestServer(ipStr string) string {
 		return ret
 	}
 	serverData, err := gosqljson.QueryDbToMap(defaultDb, "",
-		`SELECT SERVER_NAME, SERVER_PORT, REGION, COUNTRY FROM server WHERE STATUS='0' AND (COUNTRY=? OR SUPER_REGION=?)`,
+		`SELECT SERVER_NAME, SERVER_PORT, REGION, COUNTRY, PRIORITY 
+		FROM server WHERE STATUS='0' AND (COUNTRY=? OR SUPER_REGION=?)`,
 		countryCode, continent)
 	if err != nil || len(serverData) == 0 {
 		return ret
@@ -106,9 +108,20 @@ func GetNearestServer(ipStr string) string {
 			return ret
 		}
 	}
+	regionalHubs := make([]map[string]string, 0, len(serverData))
+	for _, server := range serverData {
+		priority, err := strconv.Atoi(server["PRIORITY"])
+		if err != nil {
+			continue
+		}
+		if priority <= 0 {
+			continue
+		}
+		regionalHubs = append(regionalHubs, server)
+	}
 	rand.Seed(time.Now().UTC().UnixNano())
-	r := rand.Intn(len(serverData))
-	server := serverData[r]
+	r := rand.Intn(len(regionalHubs))
+	server := regionalHubs[r]
 	ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
 	//	fmt.Println(ret)
 	return ret
