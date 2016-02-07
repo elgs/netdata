@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"runtime"
+
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/redis.v3"
-	"io/ioutil"
-	"os"
-	"runtime"
 )
 
 var makeGetDbo = func(dbType string) func(id string) gorest2.DataOperator {

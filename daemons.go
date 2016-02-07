@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/elgs/gorest2"
-	"github.com/elgs/gosqljson"
-	"github.com/satori/go.uuid"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/elgs/gorest2"
+	"github.com/elgs/gosqljson"
+	"github.com/satori/go.uuid"
 )
 
 func init() {
@@ -95,7 +96,7 @@ func init() {
 					fmt.Println(err)
 					return
 				}
-				rowAffected, err := gosqljson.ExecDb(db, `UPDATE push_notification SET STATUS=? WHERE STATUS=0 ORDER BY CREATE_TIME LIMIT 100`, statusId)
+				rowAffected, err := gosqljson.ExecDb(db, `UPDATE push_notification SET STATUS=? WHERE STATUS=0 ORDER BY CREATE_TIME`, statusId)
 				if err != nil {
 					fmt.Println(err)
 					return

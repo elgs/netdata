@@ -3,15 +3,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/elgs/gorest2"
-	"github.com/elgs/gosqljson"
-	"github.com/oschwald/geoip2-golang"
 	"math/rand"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/elgs/gorest2"
+	"github.com/elgs/gosqljson"
+	"github.com/oschwald/geoip2-golang"
 )
 
 func init() {
@@ -63,6 +64,11 @@ func GetNearestServer(ipStr string) string {
 
 	city := record.City.Names["en"]
 	countryCode := record.Country.IsoCode
+	continent := record.Continent.Names["en"]
+	var state string
+	if len(record.Subdivisions) > 0 {
+		state = record.Subdivisions[0].Names["en"]
+	}
 
 	dbo := gorest2.DboRegistry["default"]
 	defaultDb, err := dbo.GetConn()
@@ -70,7 +76,12 @@ func GetNearestServer(ipStr string) string {
 		return ret
 	}
 	serverData, err := gosqljson.QueryDbToMap(defaultDb, "",
-		"SELECT SERVER_NAME, SERVER_PORT, REGION FROM server WHERE STATUS='0' AND COUNTRY=?", countryCode)
+		`SELECT SERVER_NAME, SERVER_PORT, REGION FROM server WHERE STATUS='0' AND ( 
+			((REGION=? OR REGION=?) AND COUNTRY=?) OR
+			(COUNTRY=?) OR
+			(SUPER_REGION=?)
+		)`,
+		city, state, countryCode, countryCode, continent)
 	if err != nil || len(serverData) == 0 {
 		return ret
 	}
@@ -79,13 +90,6 @@ func GetNearestServer(ipStr string) string {
 		ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
 		//		fmt.Println(ret)
 		return ret
-	}
-	for _, server := range serverData {
-		if city == server["REGION"] {
-			ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
-			//			fmt.Println(ret)
-			return ret
-		}
 	}
 	rand.Seed(time.Now().UTC().UnixNano())
 	r := rand.Intn(len(serverData))
