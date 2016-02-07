@@ -76,12 +76,7 @@ func GetNearestServer(ipStr string) string {
 		return ret
 	}
 	serverData, err := gosqljson.QueryDbToMap(defaultDb, "",
-		`SELECT SERVER_NAME, SERVER_PORT, REGION FROM server WHERE STATUS='0' AND ( 
-			((REGION=? OR REGION=?) AND COUNTRY=?) OR
-			(COUNTRY=?) OR
-			(SUPER_REGION=?)
-		)`,
-		city, state, countryCode, countryCode, continent)
+		`SELECT SERVER_NAME, SERVER_PORT, REGION FROM server WHERE STATUS='0' AND SUPER_REGION=?`, continent)
 	if err != nil || len(serverData) == 0 {
 		return ret
 	}
@@ -90,6 +85,23 @@ func GetNearestServer(ipStr string) string {
 		ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
 		//		fmt.Println(ret)
 		return ret
+	}
+	for _, server := range serverData {
+		region := server["REGION"]
+		country := server["COUNTRY"]
+		if (city == region || state == region) && countryCode == country {
+			ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
+			//			fmt.Println(ret)
+			return ret
+		}
+	}
+	for _, server := range serverData {
+		country := server["COUNTRY"]
+		if countryCode == country {
+			ret = fmt.Sprintf("%s:%s", server["SERVER_NAME"], server["SERVER_PORT"])
+			//			fmt.Println(ret)
+			return ret
+		}
 	}
 	rand.Seed(time.Now().UTC().UnixNano())
 	r := rand.Intn(len(serverData))
