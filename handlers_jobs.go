@@ -4,11 +4,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/elgs/cron"
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
-	"net/http"
 )
 
 func init() {
@@ -41,7 +42,7 @@ func init() {
 				return
 			}
 			for _, s := range scriptsArray {
-				sqlCheck(&s)
+				sqlNormalize(&s)
 				if len(s) == 0 {
 					continue
 				}

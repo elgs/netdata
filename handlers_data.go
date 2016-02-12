@@ -6,17 +6,18 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"github.com/elgs/gorest2"
-	"github.com/elgs/gosplitargs"
-	"github.com/elgs/gosqljson"
-	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
 	"math"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/elgs/gorest2"
+	"github.com/elgs/gosplitargs"
+	"github.com/elgs/gosqljson"
+	"github.com/gorilla/websocket"
+	"github.com/satori/go.uuid"
 )
 
 var wsMsgQueue = make(chan interface{}, 100)
@@ -227,7 +228,9 @@ func init() {
 			return
 		}
 
-		sqls, err := gosplitargs.SplitArgs(r.FormValue("sql"), ";", true)
+		userSql := r.FormValue("sql")
+		sqlNormalize(&userSql)
+		sqls, err := gosplitargs.SplitArgs(userSql, ";", true)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -256,19 +259,6 @@ func init() {
 			return
 		}
 		for _, sql := range sqls {
-			emptySql := true
-			lines := strings.Split(sql, "\n")
-			for _, line := range lines {
-				line = strings.TrimSpace(line)
-				if line != "" && !strings.HasPrefix(line, "-- ") {
-					emptySql = false
-					break
-				}
-			}
-			if emptySql {
-				continue
-			}
-
 			m := map[string]interface{}{}
 
 			rowsAffected, err := exec(tx, sql)
@@ -359,7 +349,9 @@ func init() {
 			pageSize = 1000
 		}
 
-		sqls, err := gosplitargs.SplitArgs(r.FormValue("sql"), ";", true)
+		userSql := r.FormValue("sql")
+		sqlNormalize(&userSql)
+		sqls, err := gosplitargs.SplitArgs(userSql, ";", true)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -396,18 +388,6 @@ func init() {
 			return
 		}
 		for _, sql := range sqls {
-			emptySql := true
-			lines := strings.Split(sql, "\n")
-			for _, line := range lines {
-				line = strings.TrimSpace(line)
-				if line != "" && !strings.HasPrefix(line, "-- ") {
-					emptySql = false
-					break
-				}
-			}
-			if emptySql {
-				continue
-			}
 			if isQuery(sql) {
 				m, err := query(tx, sql, pageNumber, pageSize, order, dir, mode)
 				if err != nil {
@@ -448,8 +428,17 @@ func init() {
 	})
 }
 
-func sqlCheck(sql *string) {
+func sqlNormalize(sql *string) {
 	*sql = strings.TrimSpace(*sql)
+	var ret string
+	lines := strings.Split(*sql, "\n")
+	for _, line := range lines {
+		lineTrimmed := strings.TrimSpace(line)
+		if lineTrimmed != "" && !strings.HasPrefix(lineTrimmed, "-- ") {
+			ret += line + "\n"
+		}
+	}
+	*sql = ret
 }
 
 func isQuery(sql string) bool {
@@ -476,7 +465,7 @@ func (this ByName) Swap(i, j int) {
 }
 
 func query(tx *sql.Tx, sql string, pageNumber int64, pageSize int64, order string, dir string, mode string) (map[string]interface{}, error) {
-	sqlCheck(&sql)
+	sqlNormalize(&sql)
 
 	m := make(map[string]interface{})
 
@@ -585,7 +574,7 @@ func query(tx *sql.Tx, sql string, pageNumber int64, pageSize int64, order strin
 }
 
 func exec(tx *sql.Tx, sql string) (int64, error) {
-	sqlCheck(&sql)
+	sqlNormalize(&sql)
 	rowsAffected, err := gosqljson.ExecTx(tx, sql)
 	if err != nil {
 		return 0, err

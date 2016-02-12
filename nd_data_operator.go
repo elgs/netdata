@@ -4,10 +4,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
-	"strings"
 )
 
 type NdDataOperator struct {
@@ -238,7 +239,7 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	}
 	totalCount := 0
 	for _, s := range scriptsArray {
-		sqlCheck(&s)
+		sqlNormalize(&s)
 		if len(s) == 0 {
 			continue
 		}
