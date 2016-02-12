@@ -259,6 +259,9 @@ func init() {
 			return
 		}
 		for _, sql := range sqls {
+			if strings.TrimSpace(sql) == "" {
+				continue
+			}
 			m := map[string]interface{}{}
 
 			rowsAffected, err := exec(tx, sql)
@@ -388,6 +391,9 @@ func init() {
 			return
 		}
 		for _, sql := range sqls {
+			if strings.TrimSpace(sql) == "" {
+				continue
+			}
 			if isQuery(sql) {
 				m, err := query(tx, sql, pageNumber, pageSize, order, dir, mode)
 				if err != nil {
