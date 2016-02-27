@@ -47,11 +47,12 @@ func init() {
 					return
 				}
 				for _, row := range loopData {
+					scriptReplaced := script
 					for i, v := range row {
-						script = strings.Replace(script, fmt.Sprint("$", i), v, -1)
+						scriptReplaced = strings.Replace(script, fmt.Sprint("$", i), v, -1)
 					}
 
-					scriptsArray, err := gosplitargs.SplitArgs(script, ";", true)
+					scriptsArray, err := gosplitargs.SplitArgs(scriptReplaced, ";", true)
 					if err != nil {
 						fmt.Println(err)
 						tx.Rollback()
