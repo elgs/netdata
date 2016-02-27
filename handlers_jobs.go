@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/elgs/cron"
 	"github.com/elgs/gorest2"
@@ -23,12 +24,7 @@ func init() {
 			}()
 			script := job["SCRIPT"]
 			projectId := job["PROJECT_ID"]
-
-			scriptsArray, err := gosplitargs.SplitArgs(script, ";", true)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+			loopScript := job["LOOP_SCRIPT"]
 
 			dbo := gorest2.GetDbo(projectId)
 			db, err := dbo.GetConn()
@@ -41,16 +37,59 @@ func init() {
 				fmt.Println(err)
 				return
 			}
-			for _, s := range scriptsArray {
-				sqlNormalize(&s)
-				if len(s) == 0 {
-					continue
-				}
-				_, err = gosqljson.ExecTx(tx, s)
+
+			sqlNormalize(&loopScript)
+			if len(loopScript) > 0 {
+				_, loopData, err := gosqljson.QueryTxToArray(tx, "", loopScript)
 				if err != nil {
-					tx.Rollback()
 					fmt.Println(err)
+					tx.Rollback()
 					return
+				}
+				for _, row := range loopData {
+					for i, v := range row {
+						script = strings.Replace(script, fmt.Sprint("$", i), v, -1)
+					}
+
+					scriptsArray, err := gosplitargs.SplitArgs(script, ";", true)
+					if err != nil {
+						fmt.Println(err)
+						tx.Rollback()
+						return
+					}
+
+					for _, s := range scriptsArray {
+						sqlNormalize(&s)
+						if len(s) == 0 {
+							continue
+						}
+						_, err = gosqljson.ExecTx(tx, s)
+						if err != nil {
+							tx.Rollback()
+							fmt.Println(err)
+							return
+						}
+					}
+				}
+			} else {
+				scriptsArray, err := gosplitargs.SplitArgs(script, ";", true)
+				if err != nil {
+					fmt.Println(err)
+					tx.Rollback()
+					return
+				}
+
+				for _, s := range scriptsArray {
+					sqlNormalize(&s)
+					if len(s) == 0 {
+						continue
+					}
+					_, err = gosqljson.ExecTx(tx, s)
+					if err != nil {
+						tx.Rollback()
+						fmt.Println(err)
+						return
+					}
 				}
 			}
 			tx.Commit()
