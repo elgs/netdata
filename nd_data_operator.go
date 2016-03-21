@@ -60,13 +60,13 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 	ret := make([]map[string]string, 0)
 
 	clientIp := context["client_ip"].(string)
-	tokenUserId := context["user_id"].(string)
-	tokenUserCode := context["email"].(string)
+	//	tokenUserId := context["user_id"].(string)
+	//	tokenUserCode := context["email"].(string)
 
 	script := query["script"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
-	script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
-	script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
+	//	script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
+	//	script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
 		return ret, err
@@ -131,12 +131,12 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 	}
 
 	clientIp := context["client_ip"].(string)
-	tokenUserId := context["user_id"].(string)
-	tokenUserCode := context["email"].(string)
+	//	tokenUserId := context["user_id"].(string)
+	//	tokenUserCode := context["email"].(string)
 	script := query["script"]
 	script = strings.Replace(script, "__ip__", clientIp, -1)
-	script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
-	script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
+	//	script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
+	//	script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
 		return nil, nil, err
@@ -198,8 +198,8 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	projectId := context["app_id"].(string)
 
 	clientIp := context["client_ip"].(string)
-	tokenUserId := context["user_id"].(string)
-	tokenUserCode := context["email"].(string)
+	//	tokenUserId := context["user_id"].(string)
+	//	tokenUserCode := context["email"].(string)
 
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
@@ -207,8 +207,8 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	}
 	scripts := query["script"]
 	scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
-	scripts = strings.Replace(scripts, "__token_user_id__", tokenUserId, -1)
-	scripts = strings.Replace(scripts, "__token_user_code__", tokenUserCode, -1)
+	//	scripts = strings.Replace(scripts, "__token_user_id__", tokenUserId, -1)
+	//	scripts = strings.Replace(scripts, "__token_user_code__", tokenUserCode, -1)
 
 	for i, v := range queryParams {
 		scripts = strings.Replace(scripts, fmt.Sprint("$", i), v, -1)
