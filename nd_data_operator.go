@@ -59,14 +59,8 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 
 	ret := make([]map[string]string, 0)
 
-	clientIp := context["client_ip"].(string)
-	//	tokenUserId := context["token_user_id"].(string)
-	//	tokenUserCode := context["token_user_code"].(string)
-
 	script := query["script"]
-	script = strings.Replace(script, "__ip__", clientIp, -1)
-	//	script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
-	//	script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
+
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
 		return ret, err
@@ -103,6 +97,22 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 		}
 	}
 
+	if clientIp, ok := context["client_ip"].(string); ok {
+		script = strings.Replace(script, "__ip__", clientIp, -1)
+	}
+	if tokenUserId, ok := context["token_user_id"].(string); ok {
+		script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
+	}
+	if tokenUserCode, ok := context["token_user_code"].(string); ok {
+		script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
+	}
+	if loginUserId, ok := context["user_id"].(string); ok {
+		script = strings.Replace(script, "__login_user_id__", loginUserId, -1)
+	}
+	if loginUserCode, ok := context["email"].(string); ok {
+		script = strings.Replace(script, "__login_user_code__", loginUserCode, -1)
+	}
+
 	c := context["case"].(string)
 	m, err := gosqljson.QueryDbToMap(db, c, script, params[:count]...)
 	if err != nil {
@@ -130,13 +140,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 		return nil, nil, err
 	}
 
-	clientIp := context["client_ip"].(string)
-	//	tokenUserId := context["token_user_id"].(string)
-	//	tokenUserCode := context["token_user_code"].(string)
 	script := query["script"]
-	script = strings.Replace(script, "__ip__", clientIp, -1)
-	//	script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
-	//	script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
 	count, err := gosplitargs.CountSeparators(script, "\\?")
 	if err != nil {
 		return nil, nil, err
@@ -173,6 +177,22 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 		}
 	}
 
+	if clientIp, ok := context["client_ip"].(string); ok {
+		script = strings.Replace(script, "__ip__", clientIp, -1)
+	}
+	if tokenUserId, ok := context["token_user_id"].(string); ok {
+		script = strings.Replace(script, "__token_user_id__", tokenUserId, -1)
+	}
+	if tokenUserCode, ok := context["token_user_code"].(string); ok {
+		script = strings.Replace(script, "__token_user_code__", tokenUserCode, -1)
+	}
+	if loginUserId, ok := context["user_id"].(string); ok {
+		script = strings.Replace(script, "__login_user_id__", loginUserId, -1)
+	}
+	if loginUserCode, ok := context["email"].(string); ok {
+		script = strings.Replace(script, "__login_user_code__", loginUserCode, -1)
+	}
+
 	c := context["case"].(string)
 	h, a, err := gosqljson.QueryDbToArray(db, c, script, params[:count]...)
 	if err != nil {
@@ -197,26 +217,13 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	rowsAffectedArray := make([]int64, 0)
 	projectId := context["app_id"].(string)
 
-	clientIp := context["client_ip"].(string)
-	//	tokenUserId := context["token_user_id"].(string)
-	//	tokenUserCode := context["token_user_code"].(string)
-
 	query, err := this.loadQuery(projectId, tableId)
 	if err != nil {
 		return rowsAffectedArray, err
 	}
 	scripts := query["script"]
-	scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
-	//	scripts = strings.Replace(scripts, "__token_user_id__", tokenUserId, -1)
-	//	scripts = strings.Replace(scripts, "__token_user_code__", tokenUserCode, -1)
-
 	for i, v := range queryParams {
 		scripts = strings.Replace(scripts, fmt.Sprint("$", i), v, -1)
-	}
-
-	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
-	if err != nil {
-		return rowsAffectedArray, err
 	}
 
 	db, err := this.GetConn()
@@ -247,7 +254,26 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 			}
 		}
 	}
+	if clientIp, ok := context["client_ip"].(string); ok {
+		scripts = strings.Replace(scripts, "__ip__", clientIp, -1)
+	}
+	if tokenUserId, ok := context["token_user_id"].(string); ok {
+		scripts = strings.Replace(scripts, "__token_user_id__", tokenUserId, -1)
+	}
+	if tokenUserCode, ok := context["token_user_code"].(string); ok {
+		scripts = strings.Replace(scripts, "__token_user_code__", tokenUserCode, -1)
+	}
+	if loginUserId, ok := context["user_id"].(string); ok {
+		scripts = strings.Replace(scripts, "__login_user_id__", loginUserId, -1)
+	}
+	if loginUserCode, ok := context["email"].(string); ok {
+		scripts = strings.Replace(scripts, "__login_user_code__", loginUserCode, -1)
+	}
 	totalCount := 0
+	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
+	if err != nil {
+		return rowsAffectedArray, err
+	}
 	for _, s := range scriptsArray {
 		sqlNormalize(&s)
 		if len(s) == 0 {

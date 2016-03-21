@@ -53,8 +53,7 @@ func checkProjectToken(context map[string]interface{}, tableId string, op string
 	projectId := context["app_id"].(string)
 	token := context["token"].(string)
 	key := fmt.Sprint("token:", projectId, ":", token)
-	tokenMap := gorest2.RedisLocal.HGetAllMap(token).Val()
-
+	tokenMap := gorest2.RedisLocal.HGetAllMap(key).Val()
 	if projectId != "" && token != "" && len(tokenMap) > 0 &&
 		len(tokenMap["token_user_id"]) > 0 && len(tokenMap["token_user_code"]) > 0 {
 		if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
