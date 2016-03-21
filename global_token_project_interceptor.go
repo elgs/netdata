@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/elgs/gorest2"
-	"github.com/elgs/gosqljson"
 	"strings"
 	"time"
+
+	"github.com/elgs/gorest2"
+	"github.com/elgs/gosqljson"
 )
 
 func init() {
@@ -48,12 +49,17 @@ func checkAccessPermission(targets, tableId, mode, op string) bool {
 	return tableMatch && opMatch
 }
 
-func checkProjectToken(projectId string, token string, tableId string, op string) (bool, error) {
+func checkProjectToken(context map[string]interface{}, tableId string, op string) (bool, error) {
+	projectId := context["app_id"].(string)
+	token := context["token"].(string)
 	key := fmt.Sprint("token:", projectId, ":", token)
 	tokenMap := gorest2.RedisLocal.HGetAllMap(token).Val()
 
-	if projectId != "" && token != "" && len(tokenMap) > 0 {
+	if projectId != "" && token != "" && len(tokenMap) > 0 &&
+		len(tokenMap["token_user_id"]) > 0 && len(tokenMap["token_user_code"]) > 0 {
 		if checkAccessPermission(tokenMap["targets"], tableId, tokenMap["mode"], op) {
+			context["token_user_id"] = tokenMap["token_user_id"]
+			context["token_user_code"] = tokenMap["token_user_code"]
 			return true, nil
 		} else {
 			return false, errors.New("Authentication failed.")
@@ -74,7 +80,12 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 	}
 	if userData != nil && len(userData) == 1 {
 		record := userData[0]
-		err := gorest2.RedisMaster.HMSet(key, "targets", record["TARGETS"], "mode", record["MODE"]).Err()
+		tokenUserId := record["CREATOR_ID"]
+		tokenUserCode := record["CREATOR_CODE"]
+		context["token_user_id"] = tokenUserId
+		context["token_user_code"] = tokenUserCode
+		err := gorest2.RedisMaster.HMSet(key, "targets", record["TARGETS"], "mode", record["MODE"],
+			"token_user_id", tokenUserId, "token_user_code", tokenUserCode).Err()
 		if err != nil {
 			return false, err
 		}
@@ -85,7 +96,7 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 		}
 	} else {
 		userData, err := gosqljson.QueryDbToMap(defaultDb, "upper",
-			`SELECT u.TOKEN_KEY AS TOKEN,up.PROJECT_ID FROM user AS u INNER JOIN user_project AS up ON u.EMAIL=up.USER_EMAIL 
+			`SELECT u.ID,u.EMAIL,u.TOKEN_KEY AS TOKEN,up.PROJECT_ID FROM user AS u INNER JOIN user_project AS up ON u.EMAIL=up.USER_EMAIL 
 			WHERE u.TOKEN_KEY=? AND up.PROJECT_ID=? AND u.STATUS=? AND up.STATUS=?`,
 			token, projectId, "0", "0")
 		if err != nil {
@@ -93,7 +104,13 @@ func checkProjectToken(projectId string, token string, tableId string, op string
 			return false, err
 		}
 		if userData != nil && len(userData) > 0 {
-			err := gorest2.RedisMaster.HMSet(key, "targets", "*", "mode", "rwx").Err()
+			record := userData[0]
+			tokenUserId := record["ID"]
+			tokenUserCode := record["EMAIL"]
+			context["token_user_id"] = tokenUserId
+			context["token_user_code"] = tokenUserCode
+			err := gorest2.RedisMaster.HMSet(key, "targets", "*", "mode", "rwx",
+				"token_user_id", tokenUserId, "token_user_code", tokenUserCode).Err()
 			if err != nil {
 				return false, err
 			}
@@ -107,7 +124,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeCreate(resourceId string, db *s
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	ctn, err := checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "w")
+	ctn, err := checkProjectToken(context, resourceId, "w")
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["CREATE_TIME"] = time.Now().UTC()
@@ -131,7 +148,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeLoad(resourceId string, db *sql
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "r")
+	return checkProjectToken(context, resourceId, "r")
 }
 func (this *GlobalTokenProjectInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
 	return nil
@@ -140,7 +157,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeUpdate(resourceId string, db *s
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	ctn, err := checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "w")
+	ctn, err := checkProjectToken(context, resourceId, "w")
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
 			data["UPDATE_TIME"] = time.Now().UTC()
@@ -161,7 +178,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeDuplicate(resourceId string, db
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "w")
+	return checkProjectToken(context, resourceId, "w")
 }
 func (this *GlobalTokenProjectInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
 	return nil
@@ -170,7 +187,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeDelete(resourceId string, db *s
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "w")
+	return checkProjectToken(context, resourceId, "w")
 }
 func (this *GlobalTokenProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
 	return nil
@@ -179,7 +196,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeListMap(resourceId string, db *
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "r")
+	return checkProjectToken(context, resourceId, "r")
 }
 func (this *GlobalTokenProjectInterceptor) AfterListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data *[]map[string]string, total int64) error {
 	return nil
@@ -188,7 +205,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeListArray(resourceId string, db
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "r")
+	return checkProjectToken(context, resourceId, "r")
 }
 func (this *GlobalTokenProjectInterceptor) AfterListArray(resourceId string, db *sql.DB, fields string, context map[string]interface{}, headers *[]string, data *[][]string, total int64) error {
 	return nil
@@ -197,7 +214,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeQueryMap(resourceId string, scr
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "rx")
+	return checkProjectToken(context, resourceId, "rx")
 }
 func (this *GlobalTokenProjectInterceptor) AfterQueryMap(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, data *[]map[string]string) error {
 	return nil
@@ -206,7 +223,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, s
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "rx")
+	return checkProjectToken(context, resourceId, "rx")
 }
 func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	return nil
@@ -215,7 +232,7 @@ func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
-	return checkProjectToken(context["app_id"].(string), context["token"].(string), resourceId, "wx")
+	return checkProjectToken(context, resourceId, "wx")
 }
 func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
 	return nil

@@ -3,9 +3,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/elgs/gorest2"
 	"net/http"
 	"strings"
+
+	"github.com/elgs/gorest2"
 )
 
 func init() {
@@ -36,7 +37,10 @@ func (this *GlobalHandlerInterceptor) BeforeHandle(w http.ResponseWriter, r *htt
 			return allow, err
 		} else {
 			// for apps, check user token
-			allow, err := checkProjectToken(projectId, token, "*", "rwx")
+			allow, err := checkProjectToken(map[string]interface{}{
+				"app_id": projectId,
+				"token":  token,
+			}, "*", "rwx")
 			if !allow {
 				fmt.Println("auth failed:", r.URL.Path)
 			}
