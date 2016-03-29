@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+
 	"github.com/elgs/gorest2"
 )
 
@@ -14,21 +15,21 @@ type GlobalDataInterceptor struct {
 	Id string
 }
 
-func (this *GlobalDataInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *GlobalDataInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	//	wsMsgQueue <- 0
 	return nil
 }
 
-func (this *GlobalDataInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *GlobalDataInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	//	wsMsgQueue <- 0
 	return nil
 }
 
-func (this *GlobalDataInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
+func (this *GlobalDataInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string, newId []string) error {
 	//	wsMsgQueue <- 0
 	return nil
 }
-func (this *GlobalDataInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *GlobalDataInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	//	wsMsgQueue <- 0
 	return nil
 }

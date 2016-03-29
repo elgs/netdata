@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
-	"strings"
 )
 
 func init() {
@@ -25,18 +26,22 @@ func removeDataStorePassword(data map[string]interface{}) {
 	}
 }
 
-func (this *DataStoreInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
-	removeDataStorePassword(data)
+func (this *DataStoreInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
+	for _, data1 := range data {
+		removeDataStorePassword(data1)
+	}
 	return true, nil
 }
-func (this *DataStoreInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
-	removeDataStorePassword(data)
-	context["DATA_STORE_NAME"] = data["DATA_STORE_NAME"]
-	delete(data, "DATA_STORE_NAME")
+func (this *DataStoreInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
+	for _, data1 := range data {
+		removeDataStorePassword(data1)
+		context["DATA_STORE_NAME"] = data1["DATA_STORE_NAME"]
+		delete(data1, "DATA_STORE_NAME")
+	}
 	return true, nil
 }
 
-func (this *DataStoreInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *DataStoreInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	query := `SELECT ID FROM project WHERE DATA_STORE_NAME=?`
 	projects, err := gosqljson.QueryDbToMap(db, "", query, context["DATA_STORE_NAME"])
 	if err != nil {
