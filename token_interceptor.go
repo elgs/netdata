@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/elgs/gorest2"
 )
 
@@ -23,23 +24,23 @@ func (this *TokenInterceptor) commonAfterCreateOrUpdateToken(projectId, token st
 	return err
 }
 
-func (this *TokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *TokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	context["load"] = true
 	return true, nil
 }
 
-func (this *TokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *TokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	token := context["old_data"].(map[string]string)["TOKEN"]
 	projectId := context["old_data"].(map[string]string)["PROJECT_ID"]
 	return this.commonAfterCreateOrUpdateToken(projectId, token)
 }
 
-func (this *TokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *TokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	context["load"] = true
 	return true, nil
 }
 
-func (this *TokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *TokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	token := context["old_data"].(map[string]string)["TOKEN"]
 	projectId := context["old_data"].(map[string]string)["PROJECT_ID"]
 	return this.commonAfterCreateOrUpdateToken(projectId, token)

@@ -119,28 +119,30 @@ func checkProjectToken(context map[string]interface{}, tableId string, op string
 	return false, errors.New("Authentication failed.")
 }
 
-func (this *GlobalTokenProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	ctn, err := checkProjectToken(context, resourceId, "w")
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
-			data["CREATE_TIME"] = time.Now().UTC()
-			data["UPDATE_TIME"] = time.Now().UTC()
-			if userId, found := context["user_id"]; found {
-				data["CREATOR_ID"] = userId
-				data["UPDATER_ID"] = userId
-			}
-			if email, found := context["email"]; found {
-				data["CREATOR_CODE"] = email
-				data["UPDATER_CODE"] = email
+			for _, data1 := range data {
+				data1["CREATE_TIME"] = time.Now().UTC()
+				data1["UPDATE_TIME"] = time.Now().UTC()
+				if userId, found := context["user_id"]; found {
+					data1["CREATOR_ID"] = userId
+					data1["UPDATER_ID"] = userId
+				}
+				if email, found := context["email"]; found {
+					data1["CREATOR_CODE"] = email
+					data1["UPDATER_CODE"] = email
+				}
 			}
 		}
 	}
 	return ctn, err
 }
-func (this *GlobalTokenProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *GlobalTokenProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	return nil
 }
 func (this *GlobalTokenProjectInterceptor) BeforeLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, id string) (bool, error) {
@@ -152,43 +154,45 @@ func (this *GlobalTokenProjectInterceptor) BeforeLoad(resourceId string, db *sql
 func (this *GlobalTokenProjectInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	ctn, err := checkProjectToken(context, resourceId, "w")
 	if ctn && err == nil {
-		if context["meta"] != nil && context["meta"].(bool) {
-			data["UPDATE_TIME"] = time.Now().UTC()
-		}
-		if userId, found := context["user_id"]; found {
-			data["UPDATER_ID"] = userId
-		}
-		if email, found := context["email"]; found {
-			data["UPDATER_CODE"] = email
+		for _, data1 := range data {
+			if context["meta"] != nil && context["meta"].(bool) {
+				data1["UPDATE_TIME"] = time.Now().UTC()
+			}
+			if userId, found := context["user_id"]; found {
+				data1["UPDATER_ID"] = userId
+			}
+			if email, found := context["email"]; found {
+				data1["UPDATER_CODE"] = email
+			}
 		}
 	}
 	return ctn, err
 }
-func (this *GlobalTokenProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *GlobalTokenProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context, resourceId, "w")
 }
-func (this *GlobalTokenProjectInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
+func (this *GlobalTokenProjectInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string, newId []string) error {
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context, resourceId, "w")
 }
-func (this *GlobalTokenProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *GlobalTokenProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	return nil
 }
 func (this *GlobalTokenProjectInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
@@ -227,12 +231,12 @@ func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, s
 func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context, resourceId, "wx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
+func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
 	return nil
 }

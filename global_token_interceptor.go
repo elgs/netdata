@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/elgs/gorest2"
-	"github.com/elgs/gosqljson"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"github.com/elgs/gorest2"
+	"github.com/elgs/gosqljson"
 )
 
 func init() {
@@ -82,7 +83,7 @@ type GlobalTokenInterceptor struct {
 	Id string
 }
 
-func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -92,18 +93,20 @@ func (this *GlobalTokenInterceptor) BeforeCreate(resourceId string, db *sql.DB, 
 	ctn, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	if ctn && err == nil {
 		if context["meta"] != nil && context["meta"].(bool) {
-			data["CREATOR_ID"] = userToken["ID"]
-			data["CREATOR_CODE"] = userToken["EMAIL"]
-			data["CREATE_TIME"] = time.Now().UTC()
-			data["UPDATER_ID"] = userToken["ID"]
-			data["UPDATER_CODE"] = userToken["EMAIL"]
-			data["UPDATE_TIME"] = time.Now().UTC()
+			for _, data1 := range data {
+				data1["CREATOR_ID"] = userToken["ID"]
+				data1["CREATOR_CODE"] = userToken["EMAIL"]
+				data1["CREATE_TIME"] = time.Now().UTC()
+				data1["UPDATER_ID"] = userToken["ID"]
+				data1["UPDATER_CODE"] = userToken["EMAIL"]
+				data1["UPDATE_TIME"] = time.Now().UTC()
+			}
 		}
 	}
 	context["user_token"] = userToken
 	return ctn, err
 }
-func (this *GlobalTokenInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *GlobalTokenInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, id string) (bool, error) {
@@ -120,7 +123,7 @@ func (this *GlobalTokenInterceptor) BeforeLoad(resourceId string, db *sql.DB, fi
 func (this *GlobalTokenInterceptor) AfterLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, data map[string]string) error {
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -129,19 +132,21 @@ func (this *GlobalTokenInterceptor) BeforeUpdate(resourceId string, db *sql.DB, 
 	}
 	ctn, userToken, err := checkDefaultToken(context["token"].(string), resourceId)
 	if ctn && err == nil {
-		if context["meta"] != nil && context["meta"].(bool) {
-			data["UPDATER_ID"] = userToken["ID"]
-			data["UPDATER_CODE"] = userToken["EMAIL"]
-			data["UPDATE_TIME"] = time.Now().UTC()
+		for _, data1 := range data {
+			if context["meta"] != nil && context["meta"].(bool) {
+				data1["UPDATER_ID"] = userToken["ID"]
+				data1["UPDATER_CODE"] = userToken["EMAIL"]
+				data1["UPDATE_TIME"] = time.Now().UTC()
+			}
 		}
 	}
 	context["user_token"] = userToken
 	return ctn, err
 }
-func (this *GlobalTokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *GlobalTokenInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -152,10 +157,10 @@ func (this *GlobalTokenInterceptor) BeforeDuplicate(resourceId string, db *sql.D
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id string, newId string) error {
+func (this *GlobalTokenInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string, newId []string) error {
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -166,7 +171,7 @@ func (this *GlobalTokenInterceptor) BeforeDelete(resourceId string, db *sql.DB, 
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *GlobalTokenInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	return nil
 }
 func (this *GlobalTokenInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
@@ -225,7 +230,7 @@ func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, script s
 func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -236,6 +241,6 @@ func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params *[]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
+func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
 	return nil
 }

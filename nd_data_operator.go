@@ -213,8 +213,8 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 
 	return h, a, err
 }
-func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]int64, error) {
-	rowsAffectedArray := make([]int64, 0)
+func (this *NdDataOperator) Exec(tableId string, params [][]interface{}, queryParams []string, context map[string]interface{}) ([][]int64, error) {
+	rowsAffectedArray := [][]int64{}
 	projectId := context["app_id"].(string)
 
 	query, err := this.loadQuery(projectId, tableId)
@@ -274,27 +274,31 @@ func (this *NdDataOperator) Exec(tableId string, params []interface{}, queryPara
 	if err != nil {
 		return rowsAffectedArray, err
 	}
-	for _, s := range scriptsArray {
-		sqlNormalize(&s)
-		if len(s) == 0 {
-			continue
+	for _, params1 := range params {
+		rowsAffectedArray1 := []int64{}
+		for _, s := range scriptsArray {
+			sqlNormalize(&s)
+			if len(s) == 0 {
+				continue
+			}
+			count, err := gosplitargs.CountSeparators(s, "\\?")
+			if err != nil {
+				tx.Rollback()
+				return rowsAffectedArray, err
+			}
+			if len(params1) < totalCount+count {
+				tx.Rollback()
+				return nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", totalCount+count, " actual: ", len(params1)))
+			}
+			rowsAffected, err := gosqljson.ExecTx(tx, s, params1[totalCount:totalCount+count]...)
+			if err != nil {
+				tx.Rollback()
+				return rowsAffectedArray, err
+			}
+			rowsAffectedArray1 = append(rowsAffectedArray1, rowsAffected)
+			totalCount += count
 		}
-		count, err := gosplitargs.CountSeparators(s, "\\?")
-		if err != nil {
-			tx.Rollback()
-			return rowsAffectedArray, err
-		}
-		if len(params) < totalCount+count {
-			tx.Rollback()
-			return nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", totalCount+count, " actual: ", len(params)))
-		}
-		rowsAffected, err := gosqljson.ExecTx(tx, s, params[totalCount:totalCount+count]...)
-		if err != nil {
-			tx.Rollback()
-			return rowsAffectedArray, err
-		}
-		rowsAffectedArray = append(rowsAffectedArray, rowsAffected)
-		totalCount += count
+		rowsAffectedArray = append(rowsAffectedArray, rowsAffectedArray1)
 	}
 
 	for _, k := range sortedKeys {

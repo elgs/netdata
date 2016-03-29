@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/elgs/gorest2"
 	"github.com/elgs/gosqljson"
 	"github.com/elgs/gostrgen"
 	"github.com/satori/go.uuid"
-	"strings"
-	"time"
 )
 
 func init() {
@@ -22,7 +23,7 @@ type ProjectInterceptor struct {
 	Id string
 }
 
-func (this *ProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *ProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return false, err
@@ -33,12 +34,14 @@ func (this *ProjectInterceptor) BeforeCreate(resourceId string, db *sql.DB, cont
 	if err != nil {
 		return false, err
 	}
-	data["PROJECT_KEY"] = projectKey
-	data["STATUS"] = "0"
+	for _, data1 := range data {
+		data1["PROJECT_KEY"] = projectKey
+		data1["STATUS"] = "0"
+	}
 
 	return true, nil
 }
-func (this *ProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *ProjectInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return false, err
@@ -132,17 +135,29 @@ func afterCreateOrUpdateProject(context map[string]interface{}, data map[string]
 	return nil
 }
 
-func (this *ProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	projectId := data["ID"].(string)
-	_, err := loadRequestStats(projectId)
-	if err != nil {
-		return err
+func (this *ProjectInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
+	for _, data1 := range data {
+		projectId := data1["ID"].(string)
+		_, err := loadRequestStats(projectId)
+		if err != nil {
+			return err
+		}
+		err = afterCreateOrUpdateProject(context, data1)
+		if err != nil {
+			return err
+		}
 	}
-	return afterCreateOrUpdateProject(context, data)
+	return nil
 }
 
-func (this *ProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return afterCreateOrUpdateProject(context, data)
+func (this *ProjectInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
+	for _, data1 := range data {
+		err := afterCreateOrUpdateProject(context, data1)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func filterPorjects(context map[string]interface{}, filter *string) (bool, error) {
@@ -159,7 +174,7 @@ func filterPorjects(context map[string]interface{}, filter *string) (bool, error
 	}
 }
 
-func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	// check ownership
 	userToken := context["user_token"]
 	if v, ok := userToken.(map[string]string); ok {
@@ -179,120 +194,121 @@ func (this *ProjectInterceptor) BeforeDelete(resourceId string, db *sql.DB, cont
 	}
 	return true, nil
 }
-func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *ProjectInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	// cleanup, user_project, query, db, db_user, token
-	_, err := gosqljson.ExecDb(db, `DELETE FROM user_stats WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		return err
-	}
+	for _, id1 := range id {
+		_, err := gosqljson.ExecDb(db, `DELETE FROM user_stats WHERE PROJECT_ID=?`, id1)
+		if err != nil {
+			return err
+		}
 
-	_, err = gosqljson.ExecDb(db, `DELETE FROM query WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		return err
-	}
+		_, err = gosqljson.ExecDb(db, `DELETE FROM query WHERE PROJECT_ID=?`, id1)
+		if err != nil {
+			return err
+		}
 
-	_, err = gosqljson.ExecDb(db, `DELETE FROM remote_interceptor WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		return err
-	}
+		_, err = gosqljson.ExecDb(db, `DELETE FROM remote_interceptor WHERE PROJECT_ID=?`, id1)
+		if err != nil {
+			return err
+		}
 
-	_, err = gosqljson.ExecDb(db, `DELETE FROM token WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		return err
-	}
+		_, err = gosqljson.ExecDb(db, `DELETE FROM token WHERE PROJECT_ID=?`, id1)
+		if err != nil {
+			return err
+		}
 
-	jobQuery := `SELECT ID FROM job WHERE PROJECT_ID=?`
-	jobData, err := gosqljson.QueryDbToMap(db, "", jobQuery, id)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	for _, job := range jobData {
-		jobId := job["ID"]
-		if jobRuntimeId, ok := jobStatus[jobId]; ok {
-			jobsCron.RemoveFunc(jobRuntimeId)
-			delete(jobStatus, id)
+		jobQuery := `SELECT ID FROM job WHERE PROJECT_ID=?`
+		jobData, err := gosqljson.QueryDbToMap(db, "", jobQuery, id1)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		for _, job := range jobData {
+			jobId := job["ID"]
+			if jobRuntimeId, ok := jobStatus[jobId]; ok {
+				jobsCron.RemoveFunc(jobRuntimeId)
+				delete(jobStatus, id1)
+			}
+		}
+
+		_, err = gosqljson.ExecDb(db, `DELETE FROM job WHERE PROJECT_ID=?`, id1)
+		if err != nil {
+			return err
+		}
+
+		projectKey := context["project_key"]
+		dataStoreName := context["data_store_name"]
+
+		// Drop database
+		query := `SELECT * FROM data_store WHERE DATA_STORE_NAME=?`
+		projectData, err := gosqljson.QueryDbToMap(db, "", query, dataStoreName)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		if projectData == nil || len(projectData) == 0 {
+			return errors.New("Failed to delete project.")
+		}
+		dboData := projectData[0]
+		ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/", dboData["USERNAME"], dboData["PASSWORD"],
+			dboData["HOST"], dboData["PORT"])
+		projectDb, err := sql.Open("mysql", ds)
+		defer projectDb.Close()
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		dbName := "nd_" + projectKey.(string)
+
+		_, err = gosqljson.ExecDb(projectDb, "DROP DATABASE IF EXISTS "+dbName)
+		if err != nil {
+			return err
+		}
+
+		sqlDropUser := fmt.Sprintf("DROP USER `%s`", projectKey)
+		_, err = gosqljson.ExecDb(projectDb, sqlDropUser)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		// clear cache
+		cacheQuery := gorest2.RedisLocal.Keys("query:" + id1 + ":*").Val()
+		err = gorest2.RedisMaster.Del(cacheQuery...).Err()
+		if err != nil {
+			fmt.Println()
+		}
+
+		cacheRi := gorest2.RedisLocal.Keys("ri:" + id1 + ":*").Val()
+		err = gorest2.RedisMaster.Del(cacheRi...).Err()
+		if err != nil {
+			fmt.Println()
+		}
+
+		cacheToken := gorest2.RedisLocal.Keys("token:" + id1 + ":*").Val()
+		err = gorest2.RedisMaster.Del(cacheToken...).Err()
+		if err != nil {
+			fmt.Println()
+		}
+
+		cacheUser := gorest2.RedisLocal.Keys("user:" + id1 + ":*").Val()
+		err = gorest2.RedisMaster.Del(cacheUser...).Err()
+		if err != nil {
+			fmt.Println()
+		}
+
+		err = gorest2.RedisMaster.Del("stats:" + id1).Err()
+		if err != nil {
+			fmt.Println()
+		}
+
+		_, err = gosqljson.ExecDb(db, `DELETE FROM user_project WHERE PROJECT_ID=?`, id1)
+		if err != nil {
+			fmt.Println(err)
+			return err
 		}
 	}
-
-	_, err = gosqljson.ExecDb(db, `DELETE FROM job WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		return err
-	}
-
-	projectKey := context["project_key"]
-	dataStoreName := context["data_store_name"]
-
-	// Drop database
-	query := `SELECT * FROM data_store WHERE DATA_STORE_NAME=?`
-	projectData, err := gosqljson.QueryDbToMap(db, "", query, dataStoreName)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	if projectData == nil || len(projectData) == 0 {
-		return errors.New("Failed to delete project.")
-	}
-	dboData := projectData[0]
-	ds := fmt.Sprintf("%v:%v@tcp(%v:%v)/", dboData["USERNAME"], dboData["PASSWORD"],
-		dboData["HOST"], dboData["PORT"])
-	projectDb, err := sql.Open("mysql", ds)
-	defer projectDb.Close()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	dbName := "nd_" + projectKey.(string)
-
-	_, err = gosqljson.ExecDb(projectDb, "DROP DATABASE IF EXISTS "+dbName)
-	if err != nil {
-		return err
-	}
-
-	sqlDropUser := fmt.Sprintf("DROP USER `%s`", projectKey)
-	_, err = gosqljson.ExecDb(projectDb, sqlDropUser)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	// clear cache
-	cacheQuery := gorest2.RedisLocal.Keys("query:" + id + ":*").Val()
-	err = gorest2.RedisMaster.Del(cacheQuery...).Err()
-	if err != nil {
-		fmt.Println()
-	}
-
-	cacheRi := gorest2.RedisLocal.Keys("ri:" + id + ":*").Val()
-	err = gorest2.RedisMaster.Del(cacheRi...).Err()
-	if err != nil {
-		fmt.Println()
-	}
-
-	cacheToken := gorest2.RedisLocal.Keys("token:" + id + ":*").Val()
-	err = gorest2.RedisMaster.Del(cacheToken...).Err()
-	if err != nil {
-		fmt.Println()
-	}
-
-	cacheUser := gorest2.RedisLocal.Keys("user:" + id + ":*").Val()
-	err = gorest2.RedisMaster.Del(cacheUser...).Err()
-	if err != nil {
-		fmt.Println()
-	}
-
-	err = gorest2.RedisMaster.Del("stats:" + id).Err()
-	if err != nil {
-		fmt.Println()
-	}
-
-	_, err = gosqljson.ExecDb(db, `DELETE FROM user_project WHERE PROJECT_ID=?`, id)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
 	return nil
 }
 

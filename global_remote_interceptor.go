@@ -238,7 +238,7 @@ func (this *GlobalRemoteInterceptor) AfterLoad(resourceId string, db *sql.DB, fi
 func (this *GlobalRemoteInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	ret, err := true, error(nil)
 	for _, data1 := range data {
-		ret, err = this.commonBefore(resourceId, context, "update", data)
+		ret, err = this.commonBefore(resourceId, context, "update", data1)
 		if !ret || err != nil {
 			return ret, err
 		}
@@ -329,7 +329,7 @@ func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts strin
 	}
 	return ret, err
 }
-func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray []int64) error {
+func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
 	err := error(nil)
 	for _, rowsAffectedArray1 := range rowsAffectedArray {
 		err = this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray1})

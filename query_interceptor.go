@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/elgs/gorest2"
 )
 
@@ -24,21 +25,21 @@ func (this *QueryInterceptor) commonAfterCreateOrUpdateQuery(context map[string]
 	return gorest2.RedisMaster.Del(key).Err()
 }
 
-func (this *QueryInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *QueryInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	context["load"] = true
 	return true, nil
 }
 
-func (this *QueryInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
+func (this *QueryInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
 	return this.commonAfterCreateOrUpdateQuery(context)
 }
 
-func (this *QueryInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *QueryInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	context["load"] = true
 	return true, nil
 }
 
-func (this *QueryInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *QueryInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	return this.commonAfterCreateOrUpdateQuery(context)
 }
 

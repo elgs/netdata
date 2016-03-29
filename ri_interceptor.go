@@ -5,6 +5,7 @@ import (
 	"errors"
 	//	"errors"
 	"fmt"
+
 	"github.com/elgs/gorest2"
 )
 
@@ -35,25 +36,37 @@ func (this *RiInterceptor) commonAfterInterceptor(context map[string]interface{}
 	return nil
 }
 
-func (this *RiInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return this.commonAfterInterceptor(context, data)
+func (this *RiInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
+	for _, data1 := range data {
+		err := this.commonAfterInterceptor(context, data1)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (this *RiInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) (bool, error) {
+func (this *RiInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
 	context["load"] = true
 	return true, nil
 }
 
-func (this *RiInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data map[string]interface{}) error {
-	return this.commonAfterInterceptor(context, data)
+func (this *RiInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
+	for _, data1 := range data {
+		err := this.commonAfterInterceptor(context, data1)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (this *RiInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) (bool, error) {
+func (this *RiInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
 	context["load"] = true
 	return true, nil
 }
 
-func (this *RiInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id string) error {
+func (this *RiInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
 	return this.commonAfterInterceptor(context, nil)
 }
 
