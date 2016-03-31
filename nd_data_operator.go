@@ -269,12 +269,12 @@ func (this *NdDataOperator) Exec(tableId string, params [][]interface{}, queryPa
 	if loginUserCode, ok := context["email"].(string); ok {
 		scripts = strings.Replace(scripts, "__login_user_code__", loginUserCode, -1)
 	}
-	totalCount := 0
 	scriptsArray, err := gosplitargs.SplitArgs(scripts, ";", true)
 	if err != nil {
 		return rowsAffectedArray, err
 	}
 	for _, params1 := range params {
+		totalCount := 0
 		rowsAffectedArray1 := []int64{}
 		for _, s := range scriptsArray {
 			sqlNormalize(&s)
