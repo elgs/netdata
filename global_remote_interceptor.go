@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -96,10 +97,15 @@ func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(data st
 	if err != nil {
 		return false, err
 	}
-	if status == 200 && string(res) == data {
-		return true, nil
+	if status != 200 {
+		return false, errors.New("Client rejected.")
 	}
-	return false, errors.New("Client rejected.")
+	callback := ri["callback"]
+	clientData := string(res)
+	// return a array of array as parameters for callback
+	fmt.Println(callback, clientData)
+	return true, nil
+
 }
 
 func (this *GlobalRemoteInterceptor) executeAfterRemoteInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) error {
