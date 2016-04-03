@@ -25,7 +25,7 @@ func NewDbo(ds, dbType string) gorest2.DataOperator {
 	}
 }
 
-func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]string, error) {
+func loadQuery(projectId, queryName string) (map[string]string, error) {
 	key := fmt.Sprint("query:", projectId, ":", queryName)
 	queryMap := gorest2.RedisLocal.HGetAllMap(key).Val()
 	if len(queryMap) > 0 {
@@ -52,7 +52,7 @@ func (this *NdDataOperator) loadQuery(projectId, queryName string) (map[string]s
 
 func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]map[string]string, error) {
 	projectId := context["app_id"].(string)
-	query, err := this.loadQuery(projectId, tableId)
+	query, err := loadQuery(projectId, tableId)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (this *NdDataOperator) QueryMap(tableId string, params []interface{}, query
 }
 func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, queryParams []string, context map[string]interface{}) ([]string, [][]string, error) {
 	projectId := context["app_id"].(string)
-	query, err := this.loadQuery(projectId, tableId)
+	query, err := loadQuery(projectId, tableId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -216,7 +216,7 @@ func (this *NdDataOperator) QueryArray(tableId string, params []interface{}, que
 func (this *NdDataOperator) Exec(tableId string, params [][]interface{}, queryParams []string, context map[string]interface{}) ([][]int64, error) {
 	projectId := context["app_id"].(string)
 
-	query, err := this.loadQuery(projectId, tableId)
+	query, err := loadQuery(projectId, tableId)
 	if err != nil {
 		return nil, err
 	}
@@ -251,24 +251,9 @@ func (this *NdDataOperator) Exec(tableId string, params [][]interface{}, queryPa
 		}
 	}
 
-	replaceContext := map[string]string{}
-	if clientIp, ok := context["client_ip"].(string); ok {
-		replaceContext["__ip__"] = clientIp
-	}
-	if tokenUserId, ok := context["token_user_id"].(string); ok {
-		replaceContext["__token_user_id__"] = tokenUserId
-	}
-	if tokenUserCode, ok := context["token_user_code"].(string); ok {
-		replaceContext["__token_user_code__"] = tokenUserCode
-	}
-	if loginUserId, ok := context["user_id"].(string); ok {
-		replaceContext["__login_user_id__"] = loginUserId
-	}
-	if loginUserCode, ok := context["email"].(string); ok {
-		replaceContext["__login_user_code__"] = loginUserCode
-	}
+	replaceContext := buildReplaceContext(context)
+	rowsAffectedArray, err := batchExecuteTx(tx, nil, &scripts, queryParams, params, replaceContext)
 
-	rowsAffectedArray, err := batchExecuteTx(tx, &scripts, queryParams, params, replaceContext)
 	if err != nil {
 		tx.Rollback()
 		return nil, err

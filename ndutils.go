@@ -49,9 +49,20 @@ func httpRequest(url string, method string, data string, maxReadLimit int64) ([]
 	return result, res.StatusCode, err
 }
 
-func batchExecuteTx(tx *sql.Tx, script *string, scriptParams []string, params [][]interface{}, replaceContext map[string]string) ([][]int64, error) {
+func batchExecuteTx(tx *sql.Tx, db *sql.DB, script *string, scriptParams []string, params [][]interface{}, replaceContext map[string]string) ([][]int64, error) {
 
 	rowsAffectedArray := [][]int64{}
+
+	innerTrans := false
+	if tx == nil {
+		var err error
+		tx, err = db.Begin()
+		innerTrans = true
+		if err != nil {
+			return rowsAffectedArray, err
+		}
+	}
+
 	for i, v := range scriptParams {
 		*script = strings.Replace(*script, fmt.Sprint("$", i), v, -1)
 	}
@@ -62,6 +73,9 @@ func batchExecuteTx(tx *sql.Tx, script *string, scriptParams []string, params []
 
 	scriptsArray, err := gosplitargs.SplitArgs(*script, ";", true)
 	if err != nil {
+		if innerTrans {
+			tx.Rollback()
+		}
 		return rowsAffectedArray, err
 	}
 	for _, params1 := range params {
@@ -74,13 +88,22 @@ func batchExecuteTx(tx *sql.Tx, script *string, scriptParams []string, params []
 			}
 			count, err := gosplitargs.CountSeparators(s, "\\?")
 			if err != nil {
+				if innerTrans {
+					tx.Rollback()
+				}
 				return nil, err
 			}
 			if len(params1) < totalCount+count {
+				if innerTrans {
+					tx.Rollback()
+				}
 				return nil, errors.New(fmt.Sprintln("Incorrect param count. Expected: ", totalCount+count, " actual: ", len(params1)))
 			}
 			rowsAffected, err := gosqljson.ExecTx(tx, s, params1[totalCount:totalCount+count]...)
 			if err != nil {
+				if innerTrans {
+					tx.Rollback()
+				}
 				return nil, err
 			}
 			rowsAffectedArray1 = append(rowsAffectedArray1, rowsAffected)
@@ -89,5 +112,33 @@ func batchExecuteTx(tx *sql.Tx, script *string, scriptParams []string, params []
 		rowsAffectedArray = append(rowsAffectedArray, rowsAffectedArray1)
 	}
 
+	if innerTrans {
+		tx.Commit()
+	}
+
 	return rowsAffectedArray, nil
+}
+
+func buildReplaceContext(context map[string]interface{}) map[string]string {
+	replaceContext := map[string]string{}
+	if clientIp, ok := context["client_ip"].(string); ok {
+		replaceContext["__ip__"] = clientIp
+	}
+	if tokenUserId, ok := context["token_user_id"].(string); ok {
+		replaceContext["__token_user_id__"] = tokenUserId
+	}
+	if tokenUserCode, ok := context["token_user_code"].(string); ok {
+		replaceContext["__token_user_code__"] = tokenUserCode
+	}
+	if loginUserId, ok := context["user_id"].(string); ok {
+		replaceContext["__login_user_id__"] = loginUserId
+	}
+	if loginUserCode, ok := context["email"].(string); ok {
+		replaceContext["__login_user_code__"] = loginUserCode
+	}
+	return replaceContext
+}
+
+func buildParams(clientData string) ([]string, [][]interface{}, error) {
+	return nil, nil, nil
 }
