@@ -160,11 +160,13 @@ func buildParams(clientData string) ([]string, [][]interface{}, error) {
 		for _, p2 := range p1 {
 			if param, ok := p2.([]interface{}); ok {
 				params = append(params, param)
+			} else {
+				return nil, nil, errors.New("Failed to build params.")
 			}
 		}
 		return queryParams, params, nil
 	}
-	return nil, nil, errors.New("Failed to build params.")
+	return nil, nil, errors.New("Failed to build.")
 }
 
 func convertInterfaceArrayToStringArray(arrayOfInterfaces []interface{}) ([]string, error) {
