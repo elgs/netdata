@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/elgs/gojq"
 	"github.com/elgs/gosplitargs"
 	"github.com/elgs/gosqljson"
 )
@@ -140,5 +141,40 @@ func buildReplaceContext(context map[string]interface{}) map[string]string {
 }
 
 func buildParams(clientData string) ([]string, [][]interface{}, error) {
-	return nil, nil, nil
+	// assume the clientData is a json object with two arrays: query_params and params
+	parser, err := gojq.NewStringQuery(clientData)
+	if err != nil {
+		return nil, nil, err
+	}
+	qp, err := parser.QueryToArray("query_params")
+	if err != nil {
+		return nil, nil, err
+	}
+	queryParams, err := convertInterfaceArrayToStringArray(qp)
+	if err != nil {
+		return nil, nil, err
+	}
+	p, err := parser.Query("params")
+	if p1, ok := p.([]interface{}); ok {
+		params := [][]interface{}{}
+		for _, p2 := range p1 {
+			if param, ok := p2.([]interface{}); ok {
+				params = append(params, param)
+			}
+		}
+		return queryParams, params, nil
+	}
+	return nil, nil, errors.New("Failed to build params.")
+}
+
+func convertInterfaceArrayToStringArray(arrayOfInterfaces []interface{}) ([]string, error) {
+	ret := []string{}
+	for _, v := range arrayOfInterfaces {
+		if s, ok := v.(string); ok {
+			ret = append(ret, s)
+		} else {
+			return nil, errors.New("Failed to convert.")
+		}
+	}
+	return ret, nil
 }
