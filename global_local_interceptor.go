@@ -143,7 +143,7 @@ func (this *GlobalLocalInterceptor) commonBefore(resourceId string, context map[
 		data = criteriaResult
 	}
 
-	payload, err := this.createPayload(resourceId, "before"+action, data)
+	payload, err := this.createPayload(resourceId, "before_"+action, data)
 	if err != nil {
 		return false, err
 	}
@@ -316,22 +316,16 @@ func (this *GlobalLocalInterceptor) AfterQueryArray(resourceId string, script st
 	return this.commonAfter(resourceId, context, "query_array", map[string]interface{}{"headers": *headers, "data": *data})
 }
 func (this *GlobalLocalInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
-	ret, err := true, error(nil)
-	for _, params1 := range *params {
-		ret, err = this.commonBefore(resourceId, context, "exec", map[string]interface{}{"params": params1})
-		if !ret || err != nil {
-			return ret, err
-		}
+	ret, err := this.commonBefore(resourceId, context, "exec", map[string]interface{}{"params": *params})
+	if !ret || err != nil {
+		return ret, err
 	}
 	return ret, err
 }
 func (this *GlobalLocalInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
-	err := error(nil)
-	for _, rowsAffectedArray1 := range rowsAffectedArray {
-		err = this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray1})
-		if err != nil {
-			return err
-		}
+	err := this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray})
+	if err != nil {
+		return err
 	}
 	return err
 }
