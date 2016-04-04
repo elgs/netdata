@@ -124,9 +124,39 @@ func init() {
 							c <- 1
 							return
 						}
-						_, statusCode, err := httpRequest(v["URL"], v["METHOD"], v["DATA"], 0)
+						res, statusCode, err := httpRequest(v["URL"], v["METHOD"], v["DATA"], -1)
 						if err == nil && statusCode == 200 {
 							good = append(good, v["ID"])
+
+							clientData := string(res)
+							callback := v["CALLBACK"]
+							if strings.TrimSpace(callback) != "" {
+								// return a array of array as parameters for callback
+								appId := v["PROJECT_ID"]
+								query, err := loadQuery(appId, callback)
+								if err != nil {
+									fmt.Println(err)
+									return
+								}
+								scripts := query["script"]
+								replaceContext := map[string]string{
+									"__token_user_id__":   v["CREATOR_ID"],
+									"__token_user_code__": v["CREATOR_CODE"],
+									"__login_user_id__":   v["CREATOR_ID"],
+									"__login_user_code__": v["CREATOR_CODE"],
+								}
+								queryParams, params, err := buildParams(clientData)
+								//		fmt.Println(queryParams, params)
+								if err != nil {
+									fmt.Println(err)
+									return
+								}
+								_, err = batchExecuteTx(nil, db, &scripts, queryParams, params, replaceContext)
+								if err != nil {
+									fmt.Println(err)
+									return
+								}
+							}
 						} else {
 							bad = append(bad, v["ID"])
 						}
