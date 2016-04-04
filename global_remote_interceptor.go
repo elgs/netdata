@@ -90,9 +90,10 @@ func unloadRemoteInterceptor(projectId, target, theType, actionType string) erro
 	return err
 }
 
-func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(db *sql.DB, context map[string]interface{}, data string, appId string, resourceId string, action string, ri map[string]string) (bool, error) {
+func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(tx *sql.Tx, db *sql.DB, context map[string]interface{}, data string, appId string, resourceId string, action string, ri map[string]string) (bool, error) {
 	//	res, status, err := httpRequest(ri["url"], ri["method"], data, int64(len([]byte(data))))
-	res, status, err := httpRequest(ri["url"], ri["method"], data, 0)
+	//	fmt.Println("data:", data)
+	res, status, err := httpRequest(ri["url"], ri["method"], data, -1)
 	if err != nil {
 		return false, err
 	}
@@ -101,21 +102,24 @@ func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(db *sql
 	}
 	callback := ri["callback"]
 	clientData := string(res)
-	// return a array of array as parameters for callback
 
-	query, err := loadQuery(appId, callback)
-	if err != nil {
-		return false, err
-	}
-	scripts := query["script"]
-	replaceContext := buildReplaceContext(context)
-	queryParams, params, err := buildParams(clientData)
-	if err != nil {
-		return false, err
-	}
-	_, err = batchExecuteTx(nil, db, &scripts, queryParams, params, replaceContext)
-	if err != nil {
-		return false, err
+	if strings.TrimSpace(callback) != "" {
+		// return a array of array as parameters for callback
+		query, err := loadQuery(appId, callback)
+		if err != nil {
+			return false, err
+		}
+		scripts := query["script"]
+		replaceContext := buildReplaceContext(context)
+		queryParams, params, err := buildParams(clientData)
+		//		fmt.Println(queryParams, params)
+		if err != nil {
+			return false, err
+		}
+		_, err = batchExecuteTx(tx, db, &scripts, queryParams, params, replaceContext)
+		if err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 
@@ -174,7 +178,7 @@ func (this *GlobalRemoteInterceptor) commonBefore(tx *sql.Tx, db *sql.DB, resour
 		return false, err
 	}
 
-	return this.checkAgainstBeforeRemoteInterceptor(db, context, payload, appId, resourceId, action, ri)
+	return this.checkAgainstBeforeRemoteInterceptor(tx, db, context, payload, appId, resourceId, action, ri)
 }
 
 func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[string]interface{}, action string, data interface{}) error {
@@ -342,22 +346,16 @@ func (this *GlobalRemoteInterceptor) AfterQueryArray(resourceId string, script s
 	return this.commonAfter(resourceId, context, "query_array", map[string]interface{}{"headers": *headers, "data": *data})
 }
 func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
-	ret, err := true, error(nil)
-	for _, params1 := range *params {
-		ret, err = this.commonBefore(tx, nil, resourceId, context, "exec", map[string]interface{}{"params": params1})
-		if !ret || err != nil {
-			return ret, err
-		}
+	ret, err := this.commonBefore(tx, nil, resourceId, context, "exec", map[string]interface{}{"params": *params})
+	if !ret || err != nil {
+		return ret, err
 	}
-	return ret, err
+	return true, nil
 }
 func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
-	err := error(nil)
-	for _, rowsAffectedArray1 := range rowsAffectedArray {
-		err = this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray1})
-		if err != nil {
-			return err
-		}
+	err := this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray})
+	if err != nil {
+		return err
 	}
-	return err
+	return nil
 }

@@ -230,6 +230,7 @@ func (this *NdDataOperator) Exec(tableId string, params [][]interface{}, queryPa
 	if err != nil {
 		return nil, err
 	}
+
 	globalDataInterceptors, globalSortedKeys := gorest2.GetGlobalDataInterceptors()
 	for _, k := range globalSortedKeys {
 		globalDataInterceptor := globalDataInterceptors[k]
