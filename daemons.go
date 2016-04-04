@@ -151,7 +151,17 @@ func init() {
 									fmt.Println(err)
 									return
 								}
-								_, err = batchExecuteTx(nil, db, &scripts, queryParams, params, replaceContext)
+								appDbo := gorest2.GetDbo(appId)
+								if appDbo == nil {
+									fmt.Println(err)
+									return
+								}
+								appDb, err := appDbo.GetConn()
+								if appDbo == nil {
+									fmt.Println(err)
+									return
+								}
+								_, err = batchExecuteTx(nil, appDb, &scripts, queryParams, params, replaceContext)
 								if err != nil {
 									fmt.Println(err)
 									return

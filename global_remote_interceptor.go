@@ -125,12 +125,17 @@ func (this *GlobalRemoteInterceptor) checkAgainstBeforeRemoteInterceptor(tx *sql
 
 }
 
-func (this *GlobalRemoteInterceptor) executeAfterRemoteInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) error {
+func (this *GlobalRemoteInterceptor) executeAfterRemoteInterceptor(data string, appId string, resourceId string, action string, ri map[string]string, context map[string]interface{}) error {
 	dataId := strings.Replace(uuid.NewV4().String(), "-", "", -1)
-	insert := `INSERT INTO push_notification(ID,PROJECT_ID,TARGET,METHOD,URL,TYPE,ACTION_TYPE,STATUS,DATA,CALLBACK,CREATE_TIME,UPDATE_TIME) 
-	VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`
+	insert := `INSERT INTO push_notification(ID,PROJECT_ID,TARGET,METHOD,URL,TYPE,ACTION_TYPE,STATUS,DATA,CALLBACK,
+	CREATOR_ID,CREATOR_CODE,CREATE_TIME,UPDATER_ID,UPDATER_CODE,UPDATE_TIME) 
+	VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	now := time.Now().UTC()
-	params := []interface{}{dataId, appId, resourceId, ri["method"], ri["url"], "after", action, "0", data, ri["callback"], now, now}
+	userId := context["user_id"]
+	userCode := context["email"]
+
+	params := []interface{}{dataId, appId, resourceId, ri["method"], ri["url"], "after", action, "0", data, ri["callback"],
+		userId, userCode, now, userId, userCode, now}
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
@@ -173,7 +178,7 @@ func (this *GlobalRemoteInterceptor) commonBefore(tx *sql.Tx, db *sql.DB, resour
 		data = criteriaResult
 	}
 
-	payload, err := this.createPayload(resourceId, "before"+action, data)
+	payload, err := this.createPayload(resourceId, "before_"+action, data)
 	if err != nil {
 		return false, err
 	}
@@ -217,7 +222,7 @@ func (this *GlobalRemoteInterceptor) commonAfter(resourceId string, context map[
 	if err != nil {
 		return err
 	}
-	return this.executeAfterRemoteInterceptor(payload, appId, resourceId, action, ri)
+	return this.executeAfterRemoteInterceptor(payload, appId, resourceId, action, ri, context)
 }
 
 func (this *GlobalRemoteInterceptor) createPayload(target string, action string, data interface{}) (string, error) {
