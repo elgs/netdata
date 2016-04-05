@@ -1,4 +1,4 @@
-// global_remote_interceptor
+// global_local_interceptor
 package main
 
 import (
@@ -16,7 +16,7 @@ import (
 
 func init() {
 	loadACL()
-	gorest2.RegisterGlobalDataInterceptor(30, &GlobalLocalInterceptor{Id: "GlobalLocalInterceptor"})
+	gorest2.RegisterGlobalDataInterceptor(40, &GlobalLocalInterceptor{Id: "GlobalLocalInterceptor"})
 }
 
 type GlobalLocalInterceptor struct {
@@ -28,7 +28,7 @@ func loadAllLocalInterceptor() error {
 	pipe := gorest2.RedisMaster.Pipeline()
 	defer pipe.Close()
 
-	// load all remote interceptor definitions into RemoteInterceptorRegistry
+	// load all local interceptor definitions into LocalInterceptorRegistry
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
@@ -52,7 +52,7 @@ func loadAllLocalInterceptor() error {
 }
 
 func loadLocalInterceptor(projectId, target, theType, actionType string) error {
-	// load specific remote interceptor definitions into RemoteInterceptorRegistry
+	// load specific local interceptor definitions into LocalInterceptorRegistry
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
@@ -71,21 +71,21 @@ func loadLocalInterceptor(projectId, target, theType, actionType string) error {
 		theType := liMap["TYPE"]
 		actionType := liMap["ACTION_TYPE"]
 		script := liMap["SCRIPT"]
-		key := strings.Join([]string{"ri", projectId, target, theType, actionType}, ":")
+		key := strings.Join([]string{"li", projectId, target, theType, actionType}, ":")
 		gorest2.RedisMaster.HMSet(key, "script", script)
 	}
 	return nil
 }
 
 func unloadLocalInterceptor(projectId, target, theType, actionType string) error {
-	// unload specific remote interceptor definitions into RemoteInterceptorRegistry
+	// unload specific local interceptor definitions into LocalInterceptorRegistry
 	key := strings.Join([]string{"li", projectId, target, theType, actionType}, ":")
 	err := gorest2.RedisMaster.Del(key).Err()
 	return err
 }
 
-func (this *GlobalLocalInterceptor) checkAgainstBeforeLocalInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) (bool, error) {
-	res, status, err := httpRequest(ri["url"], ri["method"], data, int64(len([]byte(data))))
+func (this *GlobalLocalInterceptor) checkAgainstBeforeLocalInterceptor(data string, appId string, resourceId string, action string, li map[string]string) (bool, error) {
+	res, status, err := httpRequest(li["url"], li["method"], data, int64(len([]byte(data))))
 	if err != nil {
 		return false, err
 	}
@@ -95,12 +95,12 @@ func (this *GlobalLocalInterceptor) checkAgainstBeforeLocalInterceptor(data stri
 	return false, errors.New("Client rejected.")
 }
 
-func (this *GlobalLocalInterceptor) executeAfterLocalInterceptor(data string, appId string, resourceId string, action string, ri map[string]string) error {
+func (this *GlobalLocalInterceptor) executeAfterLocalInterceptor(data string, appId string, resourceId string, action string, li map[string]string) error {
 	dataId := strings.Replace(uuid.NewV4().String(), "-", "", -1)
 	insert := `INSERT INTO push_notification(ID,PROJECT_ID,TARGET,METHOD,URL,TYPE,ACTION_TYPE,STATUS,DATA,CREATE_TIME,UPDATE_TIME) 
 	VALUES(?,?,?,?,?,?,?,?,?,?,?)`
 	now := time.Now().UTC()
-	params := []interface{}{dataId, appId, resourceId, ri["method"], ri["url"], "after", action, "0", data, now, now}
+	params := []interface{}{dataId, appId, resourceId, li["method"], li["url"], "after", action, "0", data, now, now}
 	defaultDbo := gorest2.GetDbo("default")
 	defaultDb, err := defaultDbo.GetConn()
 	if err != nil {
@@ -114,13 +114,13 @@ func (this *GlobalLocalInterceptor) commonBefore(resourceId string, context map[
 	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
-	key := strings.Join([]string{"ri", appId, resourceId, "before", action}, ":")
-	ri := gorest2.RedisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
+	key := strings.Join([]string{"li", appId, resourceId, "before", action}, ":")
+	li := gorest2.RedisLocal.HGetAllMap(key).Val()
+	if len(li) == 0 {
 		return true, nil
 	}
 
-	criteria := ri["criteria"]
+	criteria := li["criteria"]
 	if len(strings.TrimSpace(criteria)) > 0 {
 		parser := jsonql.NewQuery(data)
 		criteriaResult, err := parser.Query(criteria)
@@ -148,20 +148,20 @@ func (this *GlobalLocalInterceptor) commonBefore(resourceId string, context map[
 		return false, err
 	}
 
-	return this.checkAgainstBeforeLocalInterceptor(payload, appId, resourceId, action, ri)
+	return this.checkAgainstBeforeLocalInterceptor(payload, appId, resourceId, action, li)
 }
 
 func (this *GlobalLocalInterceptor) commonAfter(resourceId string, context map[string]interface{}, action string, data interface{}) error {
 	rts := strings.Split(strings.Replace(resourceId, "`", "", -1), ".")
 	resourceId = rts[len(rts)-1]
 	appId := context["app_id"].(string)
-	key := strings.Join([]string{"ri", appId, resourceId, "after", action}, ":")
-	ri := gorest2.RedisLocal.HGetAllMap(key).Val()
-	if len(ri) == 0 {
+	key := strings.Join([]string{"li", appId, resourceId, "after", action}, ":")
+	li := gorest2.RedisLocal.HGetAllMap(key).Val()
+	if len(li) == 0 {
 		return nil
 	}
 
-	criteria := ri["criteria"]
+	criteria := li["criteria"]
 	if len(strings.TrimSpace(criteria)) > 0 {
 		parser := jsonql.NewQuery(data)
 		criteriaResult, err := parser.Query(criteria)
@@ -187,7 +187,7 @@ func (this *GlobalLocalInterceptor) commonAfter(resourceId string, context map[s
 	if err != nil {
 		return err
 	}
-	return this.executeAfterLocalInterceptor(payload, appId, resourceId, action, ri)
+	return this.executeAfterLocalInterceptor(payload, appId, resourceId, action, li)
 }
 
 func (this *GlobalLocalInterceptor) createPayload(target string, action string, data interface{}) (string, error) {

@@ -358,7 +358,7 @@ func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts strin
 	return true, nil
 }
 func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
-	err := this.commonAfter(resourceId, context, "exec", map[string]interface{}{"rows_affected": rowsAffectedArray})
+	err := this.commonAfter(resourceId, context, "exec", map[string]interface{}{"params": *params, "rows_affected": rowsAffectedArray})
 	if err != nil {
 		return err
 	}
