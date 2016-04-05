@@ -350,15 +350,15 @@ func (this *GlobalRemoteInterceptor) BeforeQueryArray(resourceId string, script 
 func (this *GlobalRemoteInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	return this.commonAfter(resourceId, context, "query_array", map[string]interface{}{"headers": *headers, "data": *data})
 }
-func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
-	ret, err := this.commonBefore(tx, nil, resourceId, context, "exec", map[string]interface{}{"params": *params})
+func (this *GlobalRemoteInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, queryParams []string, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+	ret, err := this.commonBefore(tx, nil, resourceId, context, "exec", map[string]interface{}{"params": *params, "query_params": queryParams})
 	if !ret || err != nil {
 		return ret, err
 	}
 	return true, nil
 }
-func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
-	err := this.commonAfter(resourceId, context, "exec", map[string]interface{}{"params": *params, "rows_affected": rowsAffectedArray})
+func (this *GlobalRemoteInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, queryParams []string, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
+	err := this.commonAfter(resourceId, context, "exec", map[string]interface{}{"params": *params, "query_params": queryParams, "rows_affected": rowsAffectedArray})
 	if err != nil {
 		return err
 	}

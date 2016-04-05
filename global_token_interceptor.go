@@ -230,7 +230,7 @@ func (this *GlobalTokenInterceptor) BeforeQueryArray(resourceId string, script s
 func (this *GlobalTokenInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	return nil
 }
-func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, queryParams []string, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if !isDefaultProjectRequest(context) {
 		return true, nil
 	}
@@ -241,6 +241,6 @@ func (this *GlobalTokenInterceptor) BeforeExec(resourceId string, scripts string
 	context["user_token"] = userToken
 	return allow, err
 }
-func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
+func (this *GlobalTokenInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, queryParams []string, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
 	return nil
 }

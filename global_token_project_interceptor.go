@@ -231,12 +231,12 @@ func (this *GlobalTokenProjectInterceptor) BeforeQueryArray(resourceId string, s
 func (this *GlobalTokenProjectInterceptor) AfterQueryArray(resourceId string, script string, params *[]interface{}, db *sql.DB, context map[string]interface{}, headers *[]string, data *[][]string) error {
 	return nil
 }
-func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}) (bool, error) {
+func (this *GlobalTokenProjectInterceptor) BeforeExec(resourceId string, scripts string, params *[][]interface{}, queryParams []string, tx *sql.Tx, context map[string]interface{}) (bool, error) {
 	if isDefaultProjectRequest(context) {
 		return true, nil
 	}
 	return checkProjectToken(context, resourceId, "wx")
 }
-func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
+func (this *GlobalTokenProjectInterceptor) AfterExec(resourceId string, scripts string, params *[][]interface{}, queryParams []string, tx *sql.Tx, context map[string]interface{}, rowsAffectedArray [][]int64) error {
 	return nil
 }
