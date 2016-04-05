@@ -241,24 +241,18 @@ func (this *GlobalRemoteInterceptor) createPayload(target string, action string,
 }
 
 func (this *GlobalRemoteInterceptor) BeforeCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
-	ret, err := true, error(nil)
-	for _, data1 := range data {
-		ret, err = this.commonBefore(nil, db, resourceId, context, "create", data1)
-		if !ret || err != nil {
-			return ret, err
-		}
+	ret, err := this.commonBefore(nil, db, resourceId, context, "create", data)
+	if !ret || err != nil {
+		return ret, err
 	}
-	return ret, err
+	return ret, nil
 }
 func (this *GlobalRemoteInterceptor) AfterCreate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
-	err := error(nil)
-	for _, data1 := range data {
-		err = this.commonAfter(resourceId, context, "create", data1)
-		if err != nil {
-			return err
-		}
+	err := this.commonAfter(resourceId, context, "create", data)
+	if err != nil {
+		return err
 	}
-	return err
+	return nil
 }
 func (this *GlobalRemoteInterceptor) BeforeLoad(resourceId string, db *sql.DB, fields string, context map[string]interface{}, id string) (bool, error) {
 	return this.commonBefore(nil, db, resourceId, context, "load", map[string]string{"id": id})
@@ -267,64 +261,46 @@ func (this *GlobalRemoteInterceptor) AfterLoad(resourceId string, db *sql.DB, fi
 	return this.commonAfter(resourceId, context, "load", data)
 }
 func (this *GlobalRemoteInterceptor) BeforeUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) (bool, error) {
-	ret, err := true, error(nil)
-	for _, data1 := range data {
-		ret, err = this.commonBefore(nil, db, resourceId, context, "update", data1)
-		if !ret || err != nil {
-			return ret, err
-		}
+	ret, err := this.commonBefore(nil, db, resourceId, context, "update", data)
+	if !ret || err != nil {
+		return ret, err
 	}
-	return ret, err
+	return ret, nil
 }
 func (this *GlobalRemoteInterceptor) AfterUpdate(resourceId string, db *sql.DB, context map[string]interface{}, data []map[string]interface{}) error {
-	err := error(nil)
-	for _, data1 := range data {
-		err = this.commonAfter(resourceId, context, "update", data1)
-		if err != nil {
-			return err
-		}
+	err := this.commonAfter(resourceId, context, "update", data)
+	if err != nil {
+		return err
 	}
-	return err
+	return nil
 }
 func (this *GlobalRemoteInterceptor) BeforeDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
-	ret, err := true, error(nil)
-	for _, id1 := range id {
-		ret, err = this.commonBefore(nil, db, resourceId, context, "duplicate", map[string]string{"id": id1})
-		if !ret || err != nil {
-			return ret, err
-		}
+	ret, err := this.commonBefore(nil, db, resourceId, context, "duplicate", map[string][]string{"id": id})
+	if !ret || err != nil {
+		return ret, err
 	}
-	return ret, err
+	return ret, nil
 }
 func (this *GlobalRemoteInterceptor) AfterDuplicate(resourceId string, db *sql.DB, context map[string]interface{}, id []string, newId []string) error {
-	err := error(nil)
-	for _, newId1 := range newId {
-		err = this.commonAfter(resourceId, context, "duplicate", map[string]string{"new_id": newId1})
-		if err != nil {
-			return err
-		}
+	err := this.commonAfter(resourceId, context, "duplicate", map[string][]string{"new_id": newId})
+	if err != nil {
+		return err
 	}
-	return err
+	return nil
 }
 func (this *GlobalRemoteInterceptor) BeforeDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) (bool, error) {
-	ret, err := true, error(nil)
-	for _, id1 := range id {
-		ret, err = this.commonBefore(nil, db, resourceId, context, "delete", map[string]string{"id": id1})
-		if !ret || err != nil {
-			return ret, err
-		}
+	ret, err := this.commonBefore(nil, db, resourceId, context, "delete", map[string][]string{"id": id})
+	if !ret || err != nil {
+		return ret, err
 	}
-	return ret, err
+	return ret, nil
 }
 func (this *GlobalRemoteInterceptor) AfterDelete(resourceId string, db *sql.DB, context map[string]interface{}, id []string) error {
-	err := error(nil)
-	for _, id1 := range id {
-		err = this.commonAfter(resourceId, context, "delete", map[string]string{"id": id1})
-		if err != nil {
-			return err
-		}
+	err := this.commonAfter(resourceId, context, "delete", map[string][]string{"id": id})
+	if err != nil {
+		return err
 	}
-	return err
+	return nil
 }
 func (this *GlobalRemoteInterceptor) BeforeListMap(resourceId string, db *sql.DB, fields string, context map[string]interface{}, filter *string, sort *string, group *string, start int64, limit int64) (bool, error) {
 	return this.commonBefore(nil, db, resourceId, context, "list_map", map[string]interface{}{"fields": fields, "filter": *filter, "sort": *sort, "group": *group, "start": start, "limit": limit})
